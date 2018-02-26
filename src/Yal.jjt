@@ -1,0 +1,165 @@
+/*options {
+  LOOKAHEAD=1;
+}*/
+
+PARSER_BEGIN(Yal)
+// código Java que invoca o parser
+public class Yal {
+  public static void main(String args[]) throws ParseException {
+    // criação do objecto utilizando o constructor com argumento para
+    // ler do standard input (teclado)
+    Yal parser = new Yal(System.in);
+    parser.Module();
+  }
+}
+PARSER_END(Yal)
+
+<DEFAULT> SKIP : {
+  " "
+  | "\t"
+  | "\n"
+  | "\r"
+  | <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+  | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+/* reserved words */
+<DEFAULT> TOKEN : {
+  <RELA_OP: ">" | "<" | "<=" | ">=" | "==" | "!=">
+  | <ADDSUB_OP: "+" | "-">
+  | <ARITH_OP: "*" | "/" | "<<" | ">>" | ">>>">
+  | <BITWISE_OP: "&" | "|" | "^">
+  | <NOT_OP: "!">
+  | <WHILE: "while">
+  | <IF: "if">
+  | <ELSE: "else">
+  | <ASSIGN: "=">
+  | <ASPA: "\"">
+  | <LPAR: "(">
+  | <RPAR: ")">
+  | <VIRG: ",">
+  | <PVIRG: ";">
+  | <LCHAVETA: "{">
+  | <RCHAVETA: "}">
+  | <FUNCTION: "function">
+  | <MODULE: "module">
+  | <SIZE: "size">
+}
+<DEFAULT> TOKEN : {
+  <INTEGER: (<DIGIT>)+>
+  | <ID: <LETTER> (<LETTER> | <DIGIT>)*>
+  | <#LETTER: ["$","A"-"Z","_","a"-"z"]>
+  | <#DIGIT: ["0"-"9"]>
+  | <STRING: "\"" (["a"-"z","A"-"Z","0"-"9",":"," ","="])+ "\"">
+}
+
+void Module() : {}
+{
+  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* <RCHAVETA>
+}
+
+void Declaration() : {}
+{
+  (ArrayElement() | ScalarElement()) [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+}
+
+void Function() : {}
+{
+  (( <FUNCTION> (ArrayElement() | ScalarElement()) <ASSIGN> <ID> <LPAR> [Varlist()] <RPAR> ) | ( <FUNCTION> <ID> <LPAR> [Varlist()] <RPAR>)) <LCHAVETA> Stmtlst() <RCHAVETA>
+}
+
+void Varlist() : {}
+{
+  (ArrayElement() | ScalarElement()) (<VIRG> (ArrayElement() | ScalarElement()))*
+}
+
+void ArrayElement() : {}
+{
+  <ID> "[" "]"
+}
+
+void ScalarElement() : {}
+{
+  <ID>
+}
+
+void Stmtlst() : {}
+{
+  (Stmt())*
+}
+
+void Stmt() : {}
+{
+  While() | If() | Assign() | Call() <PVIRG>
+}
+
+void Assign() : {}
+{
+  Lhs() <ASSIGN> Rhs() <PVIRG>
+}
+
+void Lhs() : {}
+{
+  ArrayAccess() | ScalarAccess()
+}
+
+void Rhs() : {}
+{
+  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()])
+  | "[" ArraySize() "]"
+}
+
+void ArraySize() : {}
+{
+  ScalarAccess() | <INTEGER>
+}
+
+void Term() : {}
+{
+  [<ADDSUB_OP>] (<INTEGER> | Call() | ArrayAccess() | ScalarAccess())
+}
+
+void Exprtest() : {}
+{
+  <LPAR> Lhs() <RELA_OP> Rhs() <RPAR>
+}
+
+void While() : {}
+{
+  <WHILE> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA>
+}
+
+void If() : {}
+{
+  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA>
+Stmtlst() <RCHAVETA>]
+}
+
+void Call() : {}
+{
+  <ID> ["." <ID>] <LPAR> [ArgumentList()] <RPAR>
+}
+
+void ArgumentList() : {}
+{
+  Argument() (<VIRG> Argument())*
+}
+
+void Argument() : {}
+{
+  (<ID> | <STRING> | <INTEGER>)
+}
+
+void ArrayAccess() : {}
+{
+  <ID> "[" Index() "]"
+}
+
+void ScalarAccess() : {}
+{
+  <ID> ["." <SIZE>]
+}
+
+void Index() : {}
+{
+  <ID> | <INTEGER>
+}
