@@ -42,7 +42,7 @@ PARSER_END(Yal)
   | <RCHAVETA: "}">
   | <FUNCTION: "function">
   | <MODULE: "module">
-  | <SIZE: "size">
+  | <SIZE: ".size">
 }
 <DEFAULT> TOKEN : {
   <INTEGER: (<DIGIT>)+>
@@ -84,17 +84,12 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-  While() | If() | Assign() | Call() <PVIRG>
-}
-
-void Assign() : {}
-{
-  Lhs() <ASSIGN> Rhs() <PVIRG>
+  While() | If() | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> <PVIRG> | ("[" Index() "]" | [<SIZE>]))
 }
 
 void Lhs() : {}
 {
-  ArrayAccess() | ScalarAccess()
+  Access()
 }
 
 void Rhs() : {}
@@ -105,12 +100,12 @@ void Rhs() : {}
 
 void ArraySize() : {}
 {
-  ScalarAccess() | <INTEGER>
+  Access() | <INTEGER>
 }
 
 void Term() : {}
 {
-  [<ADDSUB_OP>] (<INTEGER> | Call() | ArrayAccess() | ScalarAccess())
+  [<ADDSUB_OP>] (<INTEGER> | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | [<SIZE>]))) /* Literally took out Call() | Access() and put their production's RHS, factorizing later through <ID> (the source of the conflict). Maybe there is a more elegant way */
 }
 
 void Exprtest() : {}
@@ -125,13 +120,7 @@ void While() : {}
 
 void If() : {}
 {
-  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA>
-Stmtlst() <RCHAVETA>]
-}
-
-void Call() : {}
-{
-  <ID> ["." <ID>] <LPAR> [ArgumentList()] <RPAR>
+  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
 }
 
 void ArgumentList() : {}
@@ -144,14 +133,20 @@ void Argument() : {}
   (<ID> | <STRING> | <INTEGER>)
 }
 
-void ArrayAccess() : {}
+void Assign() : {}
 {
-  <ID> "[" Index() "]"
+  /*Lhs() <ASSIGN> Rhs() <PVIRG>*/
+  <ID> ("[" Index() "]" | [<SIZE>])
 }
 
-void ScalarAccess() : {}
+void Call() : {}
 {
-  <ID> ["." <SIZE>]
+  <ID> ["." <ID>] <LPAR> [ArgumentList()] <RPAR>
+}
+
+void Access() : {}
+{
+  <ID> ("[" Index() "]" | [<SIZE>])
 }
 
 void Index() : {}
