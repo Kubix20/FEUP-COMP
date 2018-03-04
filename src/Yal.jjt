@@ -1,6 +1,6 @@
-/*options {
+options {
   LOOKAHEAD=1;
-}*/
+}
 
 PARSER_BEGIN(Yal)
 // código Java que invoca o parser
@@ -59,27 +59,22 @@ void Module() : {}
 
 void Declaration() : {}
 {
-  (ArrayElement() | ScalarElement()) [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+  (Element()) [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
 }
 
 void Function() : {}
 {
-  (( <FUNCTION> (ArrayElement() | ScalarElement()) <ASSIGN> <ID> <LPAR> [Varlist()] <RPAR> ) | ( <FUNCTION> <ID> <LPAR> [Varlist()] <RPAR>)) <LCHAVETA> Stmtlst() <RCHAVETA>
+    <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR> [Varlist()] <RPAR> <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
 void Varlist() : {}
 {
-  (ArrayElement() | ScalarElement()) (<VIRG> (ArrayElement() | ScalarElement()))*
+  (Element()) (<VIRG> (Element()))*
 }
 
-void ArrayElement() : {}
+void Element() : {}
 {
-  <ID> "[" "]"
-}
-
-void ScalarElement() : {}
-{
-  <ID>
+  <ID> ["[" "]"]
 }
 
 void Stmtlst() : {}
