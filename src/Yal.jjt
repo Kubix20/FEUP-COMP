@@ -84,7 +84,7 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-  While() | If() | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> <PVIRG> | ("[" Index() "]" | [<SIZE>]))
+  While() | If() | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | [<SIZE>]) <ASSIGN> Rhs()) <PVIRG>
 }
 
 void Lhs() : {}
@@ -105,7 +105,7 @@ void ArraySize() : {}
 
 void Term() : {}
 {
-  [<ADDSUB_OP>] (<INTEGER> | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | [<SIZE>]))) /* Literally took out Call() | Access() and put their production's RHS, factorizing later through <ID> (the source of the conflict). Maybe there is a more elegant way */
+  [<ADDSUB_OP>] (<INTEGER> | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | [<SIZE>]) <ASSIGN> Rhs() <PVIRG>)) /* Literally took out Call() | Access() and put their production's RHS, factorizing later through <ID> (the source of the conflict). Maybe there is a more elegant way */
 }
 
 void Exprtest() : {}
@@ -135,8 +135,7 @@ void Argument() : {}
 
 void Assign() : {}
 {
-  /*Lhs() <ASSIGN> Rhs() <PVIRG>*/
-  <ID> ("[" Index() "]" | [<SIZE>])
+  Lhs() <ASSIGN> Rhs() <PVIRG>
 }
 
 void Call() : {}
