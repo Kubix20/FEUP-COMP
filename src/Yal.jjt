@@ -1,13 +1,12 @@
 options {
   LOOKAHEAD=1;
+  MULTI=true;
+  IGNORE_CASE=true;
 }
 
 PARSER_BEGIN(Yal)
-// código Java que invoca o parser
 public class Yal {
   public static void main(String args[]) throws ParseException {
-    // criação do objecto utilizando o constructor com argumento para
-    // ler do standard input (teclado)
     Yal parser = new Yal(System.in);
     parser.Module();
   }
@@ -22,6 +21,7 @@ PARSER_END(Yal)
   | <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
   | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
+
 /* reserved words */
 <DEFAULT> TOKEN : {
   <RELA_OP: ">" | "<" | "<=" | ">=" | "==" | "!=">
@@ -42,7 +42,7 @@ PARSER_END(Yal)
   | <RCHAVETA: "}">
   | <FUNCTION: "function">
   | <MODULE: "module">
-  | <SIZE: ".size">
+  | <SIZE: "size">
 }
 <DEFAULT> TOKEN : {
   <INTEGER: (<DIGIT>)+>
@@ -84,8 +84,17 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-  While() | If() | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | [<SIZE>]) <ASSIGN> Rhs()) <PVIRG>
+  While() | If() | ExpressionStmt()
 }
+
+void ExpressionStmt() #void: {}
+  {
+    <ID>
+        (["." <ID>] <LPAR> [ArgumentList()] <RPAR> #Call
+      |
+        (("[" Index() "]" #Access | ["." <SIZE>]) #Access) <ASSIGN> Rhs()) #Assign
+    <PVIRG>
+  }
 
 void Lhs() : {}
 {
@@ -94,8 +103,7 @@ void Lhs() : {}
 
 void Rhs() : {}
 {
-  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()])
-  | "[" ArraySize() "]"
+  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()]) | "[" ArraySize() "]"
 }
 
 void ArraySize() : {}
@@ -105,7 +113,7 @@ void ArraySize() : {}
 
 void Term() : {}
 {
-  [<ADDSUB_OP>] (<INTEGER> | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | [<SIZE>]) <ASSIGN> Rhs() <PVIRG>)) /* Literally took out Call() | Access() and put their production's RHS, factorizing later through <ID> (the source of the conflict). Maybe there is a more elegant way */
+  [<ADDSUB_OP>] (<INTEGER> | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | ["." <SIZE>]) <ASSIGN> Rhs() <PVIRG>)) /* Literally took out Call() | Access() and put their production's RHS, factorizing later through <ID> (the source of the conflict). Maybe there is a more elegant way */
 }
 
 void Exprtest() : {}
@@ -145,7 +153,7 @@ void Call() : {}
 
 void Access() : {}
 {
-  <ID> ("[" Index() "]" | [<SIZE>])
+  <ID> ("[" Index() "]" | ["." <SIZE>])
 }
 
 void Index() : {}
