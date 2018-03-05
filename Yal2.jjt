@@ -1,0 +1,154 @@
+options {
+  LOOKAHEAD=1;
+  MULTI=true;
+  IGNORE_CASE=true;
+  OUTPUT_DIRECTORY="./java";
+}
+
+PARSER_BEGIN(Yal)
+public class Yal {
+  public static void main(String args[]) throws ParseException {
+    Yal parser = new Yal(System.in);
+    ASTModule root = parser.Module();
+    root.dump(">");
+  }
+}
+PARSER_END(Yal)
+
+<DEFAULT> SKIP : {
+  " "
+  | "\t"
+  | "\n"
+  | "\r"
+  | <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+  | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+/* reserved words */
+<DEFAULT> TOKEN : {
+  <RELA_OP: ">" | "<" | "<=" | ">=" | "==" | "!=">
+  | <ADDSUB_OP: "+" | "-">
+  | <ARITH_OP: "*" | "/" | "<<" | ">>" | ">>>">
+  | <BITWISE_OP: "&" | "|" | "^">
+  | <NOT_OP: "!">
+  | <WHILE: "while">
+  | <IF: "if">
+  | <ELSE: "else">
+  | <ASSIGN: "=">
+  | <ASPA: "\"">
+  | <LPAR: "(">
+  | <RPAR: ")">
+  | <VIRG: ",">
+  | <PVIRG: ";">
+  | <LCHAVETA: "{">
+  | <RCHAVETA: "}">
+  | <FUNCTION: "function">
+  | <MODULE: "module">
+  | <SIZE: "size">
+}
+<DEFAULT> TOKEN : {
+  <INTEGER: (<DIGIT>)+>
+  | <ID: <LETTER> (<LETTER> | <DIGIT>)*>
+  | <#LETTER: ["$","A"-"Z","_","a"-"z"]>
+  | <#DIGIT: ["0"-"9"]>
+  | <STRING: "\"" (["a"-"z","A"-"Z","0"-"9",":"," ","="])+ "\"">
+}
+
+ASTModule Module() : {}
+{
+  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* <RCHAVETA> {return jjtThis;}
+}
+
+void Declaration() : {}
+{
+  (Element()) [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+}
+
+void Function() : {}
+{
+    <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR> [Varlist()] <RPAR> <LCHAVETA> Stmtlst() <RCHAVETA>
+}
+
+void Varlist() : {}
+{
+  (Element()) (<VIRG> (Element()))*
+}
+
+void Element() : {}
+{
+  <ID> ["[" "]"]
+}
+
+void Stmtlst() : {}
+{
+  (Stmt())*
+}
+
+void Stmt() : {}
+{
+  While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
+}
+
+void Assign() : {}
+{
+  Lhs() <ASSIGN> Rhs() <PVIRG>
+}
+
+void Lhs() : {}
+{
+  Access()
+}
+
+void Rhs() : {}
+{
+  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()])  | "[" ArraySize() "]"
+}
+
+void ArraySize() : {}
+{
+  Access() | <INTEGER>
+}
+
+void Term() : {}
+{
+ [<ADDSUB_OP>] (<INTEGER> | LOOKAHEAD(3) Call() | Access())
+}
+
+void Exprtest() : {}
+{
+  <LPAR> Lhs() <RELA_OP> Rhs() <RPAR>
+}
+
+void While() : {}
+{
+  <WHILE> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA>
+}
+
+void If() : {}
+{
+  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
+}
+
+void Call() : {}
+{
+  <ID> ["." <ID>] <LPAR> [ArgumentList()] <RPAR>
+}
+
+void ArgumentList() : {}
+{
+  Argument() (<VIRG> Argument())*
+}
+
+void Argument() : {}
+{
+  (<ID> | <STRING> | <INTEGER>)
+}
+
+void Access() : {}
+{
+  <ID> ("[" Index() "]" | ["." <SIZE>])
+}
+
+void Index() : {}
+{
+  <ID> | <INTEGER>
+}
