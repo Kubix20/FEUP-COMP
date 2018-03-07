@@ -2,15 +2,20 @@ options {
   LOOKAHEAD=1;
   MULTI=true;
   IGNORE_CASE=true;
-  OUTPUT_DIRECTORY="./java";
+  NODE_DEFAULT_VOID=true;
 }
 
 PARSER_BEGIN(Yal)
+import java.io.FileReader;
+import java.io.FileNotFoundException;
 public class Yal {
-  public static void main(String args[]) throws ParseException {
-    Yal parser = new Yal(System.in);
+  public static int nErrors = 0;
+  public static final int ERROR_LIMIT = 5;
+  public static void main(String args[]) throws ParseException, FileNotFoundException {
+    Yal parser = new Yal(new FileReader("mymodule.yal"));
     ASTModule root = parser.Module();
     root.dump(">");
+    System.out.println("Program parsed with "+Yal.nErrors+" errors");
   }
 }
 PARSER_END(Yal)
@@ -53,19 +58,32 @@ PARSER_END(Yal)
   | <STRING: "\"" (["a"-"z","A"-"Z","0"-"9",":"," ","="])+ "\"">
 }
 
-ASTModule Module() : {}
+/*JAVACODE
+void error_skipto(ParseException e, int kind) {
+  if(e != null)
+    System.out.println(e.toString());  // print the error message
+  //System.out.println("Last token read: "+e.currentToken.image+"\n\n\n");
+  Token t;
+  //MUST be do while
+  do {
+    t = getNextToken();
+  } while (t.kind != kind);
+}
+*/
+
+ASTModule Module() #Module : {}
 {
   <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* <RCHAVETA> {return jjtThis;}
 }
 
-void Declaration() : {}
+void Declaration() #Declaration : {}
 {
-  (Element()) [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+  Element() [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
 }
 
-void Function() : {}
+void Function() #Function : {}
 {
-    <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR> [Varlist()] <RPAR> <LCHAVETA> Stmtlst() <RCHAVETA>
+  <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR> [Varlist()] <RPAR> <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
 void Varlist() : {}
@@ -73,7 +91,7 @@ void Varlist() : {}
   (Element()) (<VIRG> (Element()))*
 }
 
-void Element() : {}
+void Element() #Element : {}
 {
   <ID> ["[" "]"]
 }
@@ -88,9 +106,9 @@ void Stmt() : {}
   While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
 }
 
-void Assign() : {}
+void Assign() #Assign : {}
 {
-  Lhs() <ASSIGN> Rhs() <PVIRG>
+    Lhs() <ASSIGN> Rhs() <PVIRG>
 }
 
 void Lhs() : {}
@@ -118,17 +136,17 @@ void Exprtest() : {}
   <LPAR> Lhs() <RELA_OP> Rhs() <RPAR>
 }
 
-void While() : {}
+void While() #While : {}
 {
   <WHILE> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
-void If() : {}
+void If() #If : {}
 {
   <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
 }
 
-void Call() : {}
+void Call() #Call: {}
 {
   <ID> ["." <ID>] <LPAR> [ArgumentList()] <RPAR>
 }
