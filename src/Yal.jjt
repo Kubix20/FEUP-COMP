@@ -13,7 +13,11 @@ public class Yal {
   public static int nErrors = 0;
   public static final int ERROR_LIMIT = 5;
   public static void main(String args[]) throws ParseException, FileNotFoundException {
-    Yal parser = new Yal(new FileReader("mymodule.yal"));
+	String newline = System.lineSeparator();
+	System.out.println(newline+newline+
+					   "<<<<<<<< Parsing file "+ args[0]+ " >>>>>>>>>"+
+					   newline+newline);
+    Yal parser = new Yal(new FileReader(args[0]));
     ASTModule root = parser.Module();
     root.dump(">");
     System.out.println("Program parsed with "+Yal.nErrors+" errors");
@@ -67,7 +71,29 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   //MUST be do while
   do {
     t = getNextToken();
+	System.out.println(t);
   } while (t.kind != kind);
+  System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
+}
+
+JAVACODE
+boolean contains(int[] kinds, int kind) {
+  for(int i=0; i<kinds.length; i++) {
+	  if(kinds[i] == kind)
+		  return true;
+  }
+  return false;
+}
+JAVACODE
+void error_multskipto(ParseException e, int[] kinds, String whereWasCaught) {
+  ++Yal.nErrors;
+  System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
+  Token t;
+  //MUST be do while
+  do {
+    t = getNextToken();
+	System.out.println(t);
+  } while (!contains(kinds,t.kind));
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
 
@@ -79,7 +105,14 @@ void error(ParseException e, String whereWasCaught) {
 
 ASTModule Module() #Module : {}
 {
-  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* <RCHAVETA> {return jjtThis;}
+  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* 
+  try {
+	<RCHAVETA> 
+  }
+  catch(ParseException e){
+    error_skipto(e, RCHAVETA, "BEFORE MODULE END");
+  }
+  {return jjtThis;}
 }
 
 void Declaration() #Declaration : {}
@@ -123,22 +156,24 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-  While() | If() | try{
-    LOOKAHEAD(3) Assign() |  Call() <PVIRG>
+	
+  try{
+	While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
   }
-  catch(ParseException e) {
-
+  catch(ParseException e){
+	  int[] kinds = {PVIRG, RPAR};
+     error_multskipto(e, kinds, "STATEMENT CALL");
   }
 }
 
 void Assign() #Assign : {}
 {
-    Lhs() <ASSIGN>
+	Lhs() <ASSIGN>
     try{
       Rhs() <PVIRG>
-    }
-    catch(ParseException e){
-      error(e, "");
+	}
+	catch(ParseException e){
+      error_skipto(e, PVIRG, "RIGHT ASSIGN");
     }
 }
 
@@ -181,7 +216,13 @@ void While() #While : {}
 
 void If() #If : {}
 {
-  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
+  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> 
+  try{
+	  [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
+  }
+  catch(ParseException e){
+	error_skipto(e, PVIRG, "ELSE");
+  }
 }
 
 void Call() #Call: {}
