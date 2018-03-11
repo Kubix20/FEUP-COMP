@@ -68,6 +68,7 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   do {
     t = getNextToken();
   } while (t.kind != kind);
+  System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
 
 JAVACODE
@@ -89,7 +90,7 @@ void Declaration() #Declaration : {}
 void Function() #Function : {}
 {
   try {
-    <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR>
+      <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR>
   }
   catch(ParseException e){
     error_skipto(e, LPAR, "FUNCTION DECLARATION");
@@ -122,7 +123,12 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-  While() | If() | LOOKAHEAD(3) Assign() |  Call() <PVIRG>
+  While() | If() | try{
+    LOOKAHEAD(3) Assign() |  Call() <PVIRG>
+  }
+  catch(ParseException e) {
+
+  }
 }
 
 void Assign() #Assign : {}
@@ -158,7 +164,14 @@ void Term() : {}
 
 void Exprtest() : {}
 {
-  <LPAR> Lhs() <RELA_OP> Rhs() <RPAR>
+  try{
+  <LPAR>
+    Lhs() <RELA_OP> Rhs()
+  <RPAR>
+}
+catch(ParseException e){
+  error_skipto(e, RPAR, "EXPRTEST");
+}
 }
 
 void While() #While : {}
