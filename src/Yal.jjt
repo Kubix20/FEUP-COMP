@@ -2,13 +2,21 @@ options {
   LOOKAHEAD=1;
   MULTI=true;
   IGNORE_CASE=true;
+  NODE_DEFAULT_VOID=true;
+  TRACK_TOKENS=true;
 }
 
 PARSER_BEGIN(Yal)
+import java.io.FileReader;
+import java.io.FileNotFoundException;
 public class Yal {
-  public static void main(String args[]) throws ParseException {
-    Yal parser = new Yal(System.in);
-    parser.Module();
+  public static int nErrors = 0;
+  public static final int ERROR_LIMIT = 5;
+  public static void main(String args[]) throws ParseException, FileNotFoundException {
+    Yal parser = new Yal(new FileReader("mymodule.yal"));
+    ASTModule root = parser.Module();
+    root.dump(">");
+    System.out.println("Program parsed with "+Yal.nErrors+" errors");
   }
 }
 PARSER_END(Yal)
@@ -21,7 +29,6 @@ PARSER_END(Yal)
   | <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
   | <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
-
 /* reserved words */
 <DEFAULT> TOKEN : {
   <RELA_OP: ">" | "<" | "<=" | ">=" | "==" | "!=">
@@ -52,19 +59,50 @@ PARSER_END(Yal)
   | <STRING: "\"" (["a"-"z","A"-"Z","0"-"9",":"," ","="])+ "\"">
 }
 
-void Module() : {}
-{
-  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* <RCHAVETA>
+JAVACODE
+void error_skipto(ParseException e, int kind, String whereWasCaught) {
+  ++Yal.nErrors;
+  System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
+  Token t;
+  //MUST be do while
+  do {
+    t = getNextToken();
+  } while (t.kind != kind);
 }
 
-void Declaration() : {}
-{
-  (Element()) [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+JAVACODE
+void error(ParseException e, String whereWasCaught) {
+  ++Yal.nErrors;
+  System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
 }
 
-void Function() : {}
+ASTModule Module() #Module : {}
 {
-    <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR> [Varlist()] <RPAR> <LCHAVETA> Stmtlst() <RCHAVETA>
+  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* <RCHAVETA> {return jjtThis;}
+}
+
+void Declaration() #Declaration : {}
+{
+  Element() [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+}
+
+void Function() #Function : {}
+{
+  try {
+    <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR>
+  }
+  catch(ParseException e){
+    error_skipto(e, LPAR, "FUNCTION DECLARATION");
+  }
+
+  try {
+    [Varlist()] <RPAR>
+  }
+  catch(ParseException e){
+    error_skipto(e, RPAR, "FUNCTION DECLARATION ARGS");
+  }
+
+    <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
 void Varlist() : {}
@@ -72,7 +110,7 @@ void Varlist() : {}
   (Element()) (<VIRG> (Element()))*
 }
 
-void Element() : {}
+void Element() #Element : {}
 {
   <ID> ["[" "]"]
 }
@@ -84,17 +122,19 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-  While() | If() | ExpressionStmt()
+  While() | If() | LOOKAHEAD(3) Assign() |  Call() <PVIRG>
 }
 
-void ExpressionStmt() #void: {}
-  {
-    <ID>
-        (["." <ID>] <LPAR> [ArgumentList()] <RPAR> #Call
-      |
-        (("[" Index() "]" #Access | ["." <SIZE>]) #Access) <ASSIGN> Rhs()) #Assign
-    <PVIRG>
-  }
+void Assign() #Assign : {}
+{
+    Lhs() <ASSIGN>
+    try{
+      Rhs() <PVIRG>
+    }
+    catch(ParseException e){
+      error(e, "");
+    }
+}
 
 void Lhs() : {}
 {
@@ -103,7 +143,7 @@ void Lhs() : {}
 
 void Rhs() : {}
 {
-  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()]) | "[" ArraySize() "]"
+  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()])  | "[" ArraySize() "]"
 }
 
 void ArraySize() : {}
@@ -113,7 +153,7 @@ void ArraySize() : {}
 
 void Term() : {}
 {
-  [<ADDSUB_OP>] (<INTEGER> | <ID> (["." <ID>] <LPAR> [ArgumentList()] <RPAR> | ("[" Index() "]" | ["." <SIZE>]) <ASSIGN> Rhs() <PVIRG>)) /* Literally took out Call() | Access() and put their production's RHS, factorizing later through <ID> (the source of the conflict). Maybe there is a more elegant way */
+ [<ADDSUB_OP>] (<INTEGER> | LOOKAHEAD(3) Call() | Access())
 }
 
 void Exprtest() : {}
@@ -121,14 +161,25 @@ void Exprtest() : {}
   <LPAR> Lhs() <RELA_OP> Rhs() <RPAR>
 }
 
-void While() : {}
+void While() #While : {}
 {
   <WHILE> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
-void If() : {}
+void If() #If : {}
 {
   <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
+}
+
+void Call() #Call: {}
+{
+  <ID> ["." <ID>] <LPAR>
+  try{
+    [ArgumentList()] <RPAR>
+  }
+  catch(ParseException e){
+    error_skipto(e, RPAR, "FUNCTION CALL ARGS");
+  }
 }
 
 void ArgumentList() : {}
@@ -139,16 +190,6 @@ void ArgumentList() : {}
 void Argument() : {}
 {
   (<ID> | <STRING> | <INTEGER>)
-}
-
-void Assign() : {}
-{
-  Lhs() <ASSIGN> Rhs() <PVIRG>
-}
-
-void Call() : {}
-{
-  <ID> ["." <ID>] <LPAR> [ArgumentList()] <RPAR>
 }
 
 void Access() : {}
