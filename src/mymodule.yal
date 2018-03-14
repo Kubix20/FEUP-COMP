@@ -1,12 +1,12 @@
 module mymodule {
 	function main(){
-		a = [=];
-		b = [[2];
+		a = [5];
+		b = [2];
 		io.print("Hello World");
 	}
 
 	function cenas() {
-		a= 2;
+		a[0] = 2;
 		b = [2];
 	}
 }

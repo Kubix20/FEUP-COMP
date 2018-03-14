@@ -103,11 +103,11 @@ void error(ParseException e, String whereWasCaught) {
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
 }
 
-ASTModule Module() #Module : {}
+ASTModule Module() #Module : {Token t1;}
 {
-  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* 
+  <MODULE> t1=<ID>{jjtThis.setValues(t1.image);} <LCHAVETA> (Declaration())* (Function())*
   try {
-	<RCHAVETA> 
+	<RCHAVETA>
   }
   catch(ParseException e){
     error_skipto(e, RCHAVETA, "BEFORE MODULE END");
@@ -115,15 +115,15 @@ ASTModule Module() #Module : {}
   {return jjtThis;}
 }
 
-void Declaration() #Declaration : {}
+void Declaration() #Declaration : {Token t1;}
 {
-  Element() [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+  Element() [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] t1=<INTEGER>{jjtThis.setValues(t1.image);})] <PVIRG>
 }
 
-void Function() #Function : {}
+void Function() #Function : {Token t1;}
 {
   try {
-      <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR>
+      <FUNCTION> Element() [<ASSIGN> t1=<ID>{jjtThis.setValues(t1.image);}] <LPAR>
   }
   catch(ParseException e){
     error_skipto(e, LPAR, "FUNCTION DECLARATION");
@@ -144,9 +144,9 @@ void Varlist() : {}
   (Element()) (<VIRG> (Element()))*
 }
 
-void Element() #Element : {}
+void Element() #Element : {Token t1;}
 {
-  <ID> ["[" "]"]
+  t1=<ID>{jjtThis.setValues(t1.image);} ["[" "]"]
 }
 
 void Stmtlst() : {}
@@ -156,7 +156,7 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-	
+
   try{
 	While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
   }
@@ -182,26 +182,30 @@ void Lhs() : {}
   Access()
 }
 
-void Rhs() : {}
+void Rhs() #Rhs : {Token t1;}
 {
-  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()])  | "[" ArraySize() "]"
+  (Term() [( t1=<ARITH_OP> | t1=<BITWISE_OP> | t1=<ADDSUB_OP> )
+  {jjtThis.setValues(t1.image);}
+   Term()])  | "[" ArraySize() "]"
 }
 
-void ArraySize() : {}
+void ArraySize() #ArraySize : {Token t1;}
 {
-  Access() | <INTEGER>
+  Access() | t1=<INTEGER>{jjtThis.setValues(t1.image);}
 }
 
-void Term() : {}
+void Term() #Term : {Token t1, t2;}
 {
- [<ADDSUB_OP>] (<INTEGER> | LOOKAHEAD(3) Call() | Access())
+{t2=null;}
+[t2=<ADDSUB_OP>]
+(t1=<INTEGER>{jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
 }
 
-void Exprtest() : {}
+void Exprtest() #Exprtest : {Token t1;}
 {
   try{
   <LPAR>
-    Lhs() <RELA_OP> Rhs()
+    Lhs() t1=<RELA_OP>{jjtThis.setValues(t1.image);} Rhs()
   <RPAR>
 }
 catch(ParseException e){
@@ -216,7 +220,7 @@ void While() #While : {}
 
 void If() #If : {}
 {
-  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> 
+  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA>
   try{
 	  [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
   }
