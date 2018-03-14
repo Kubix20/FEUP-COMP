@@ -2,6 +2,9 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=false,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 public
 class ASTCall extends SimpleNode {
+  protected String name;
+  protected String functionName;
+
   public ASTCall(int id) {
     super(id);
   }
@@ -9,6 +12,15 @@ class ASTCall extends SimpleNode {
   public ASTCall(Yal p, int id) {
     super(p, id);
   }
+
+  public void setValues(String value, String functionName){
+    this.name = value;
+    this.functionName = functionName;
+  }
+
+  @Override
+  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.name + "." + this.functionName; }
+
 
 }
 /* JavaCC - OriginalChecksum=bdba473e3066340628e454196050733d (do not edit this line) */

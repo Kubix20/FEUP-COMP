@@ -229,9 +229,11 @@ void If() #If : {}
   }
 }
 
-void Call() #Call: {}
+void Call() #Call: {Token t1, t2;}
 {
-  <ID> ["." <ID>] <LPAR>
+  {t2=null;}
+  t1=<ID> ["." t2=<ID>] <LPAR>
+  {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
   try{
     [ArgumentList()] <RPAR>
   }
@@ -245,17 +247,21 @@ void ArgumentList() : {}
   Argument() (<VIRG> Argument())*
 }
 
-void Argument() : {}
+void Argument() #Argument : {Token t1;}
 {
-  (<ID> | <STRING> | <INTEGER>)
+  (t1=<ID> | t1=<STRING> | t1=<INTEGER>)
+  {jjtThis.setValues(t1.image);}
 }
 
-void Access() : {}
+void Access() #Access : {Token t1, t2;}
 {
-  <ID> ("[" Index() "]" | ["." <SIZE>])
+  {t2=null;}
+  t1=<ID> ("[" Index() "]" | ["." t2=<SIZE>])
+  {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
 }
 
-void Index() : {}
+void Index() #Index : {Token t1;}
 {
-  <ID> | <INTEGER>
+  t1=<ID> | t1=<INTEGER>
+  {jjtThis.setValues(t1.image);}
 }
