@@ -3,7 +3,7 @@
 public
 class ASTAccess extends SimpleNode {
   protected String name;
-  protected int size;
+  protected String size="";
 
   public ASTAccess(int id) {
     super(id);
@@ -15,13 +15,13 @@ class ASTAccess extends SimpleNode {
 
   public void setValues(String value, String size){
     this.name = value;
-    if(size != "")
-      this.size = Integer.parseInt(size);
-    
+    this.size = size;
   }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.name + "." + this.size; }
+  public String toString() { 
+	return /*YalTreeConstants.jjtNodeName[id] + " " +*/ this.name + this.size; 
+  }
 
 
 }

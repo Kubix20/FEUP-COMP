@@ -3,9 +3,12 @@
 public
 class ASTRhs extends SimpleNode {
   protected String operator;
+  protected boolean print;
 
   public ASTRhs(int id) {
     super(id);
+	this.operator = "";
+	this.print = false;
   }
 
   public ASTRhs(Yal p, int id) {
@@ -14,10 +17,14 @@ class ASTRhs extends SimpleNode {
 
   public void setValues(String value){
     this.operator = value;
+	this.print = true;
   }
+  
+  @Override
+  public boolean print() { return this.print; }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.operator; }
+  public String toString() { return /*YalTreeConstants.jjtNodeName[id]; + " " + */this.operator; }
 
 }
 /* JavaCC - OriginalChecksum=597ed5e72fbe47b2ad2ba8d7f544824e (do not edit this line) */

@@ -64,20 +64,33 @@ class SimpleNode implements Node {
 
   public String toString() { return YalTreeConstants.jjtNodeName[id]; }
   public String toString(String prefix) { return prefix + toString(); }
+  
+  public boolean print(){
+	  return true;
+  }
 
   /* Override this method if you want to customize how the node dumps
      out its children. */
 
   public void dump(String prefix) {
-    System.out.println(toString(prefix));
+	boolean print = this.print();
+	if(print)
+		System.out.println(toString(prefix));
     if (children != null) {
       for (int i = 0; i < children.length; ++i) {
         SimpleNode n = (SimpleNode)children[i];
         if (n != null) {
-          n.dump(prefix + " ");
+		   if(print)
+			n.dump(prefix + " ");
+		   else
+			n.dump(prefix);
         }
       }
     }
+  }
+  
+   public int getId() {
+    return id;
   }
 }
 

@@ -2,10 +2,11 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=false,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 public
 class ASTArraySize extends SimpleNode {
-  protected int value;
+  protected String value;
 
   public ASTArraySize(int id) {
     super(id);
+	this.value = "";
   }
 
   public ASTArraySize(Yal p, int id) {
@@ -13,10 +14,18 @@ class ASTArraySize extends SimpleNode {
   }
 
   public void setValues(String value){
-    this.value = Integer.parseInt(value);
+	this.value = value;
   }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.value; }
+  public String toString() { 
+	/*
+	return YalTreeConstants.jjtNodeName[id] + " " + this.value;
+	*/
+	if(this.value != "")
+		return "[" + this.value + "]";
+	else
+		return "[  ]";
+  }
 }
 /* JavaCC - OriginalChecksum=074776620eae5525dec8029d81b72b40 (do not edit this line) */

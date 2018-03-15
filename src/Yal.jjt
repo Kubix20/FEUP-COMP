@@ -123,7 +123,7 @@ void Declaration() #Declaration : {Token t1;}
 void Function() #Function : {Token t1;}
 {
   try {
-      <FUNCTION> Element() [<ASSIGN> t1=<ID>{jjtThis.setValues(t1.image);}] <LPAR>
+      <FUNCTION> [LOOKAHEAD(2) Element() <ASSIGN>] t1=<ID>{jjtThis.setValues(t1.image);} <LPAR>
   }
   catch(ParseException e){
     error_skipto(e, LPAR, "FUNCTION DECLARATION");
@@ -194,11 +194,10 @@ void ArraySize() #ArraySize : {Token t1;}
   Access() | t1=<INTEGER>{jjtThis.setValues(t1.image);}
 }
 
-void Term() #Term : {Token t1, t2;}
+void Term() #Term : {Token t1=null, t2=null;}
 {
-{t2=null;}
 [t2=<ADDSUB_OP>]
-(t1=<INTEGER>{jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
+(t1=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
 }
 
 void Exprtest() #Exprtest : {Token t1;}
@@ -229,9 +228,8 @@ void If() #If : {}
   }
 }
 
-void Call() #Call: {Token t1, t2;}
+void Call() #Call: {Token t1=null, t2=null;}
 {
-  {t2=null;}
   t1=<ID> ["." t2=<ID>] <LPAR>
   {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
   try{
@@ -257,11 +255,10 @@ void Access() #Access : {Token t1, t2;}
 {
   {t2=null;}
   t1=<ID> ("[" Index() "]" | ["." t2=<SIZE>])
-  {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
+  {jjtThis.setValues(t1.image, (t2 == null ? "": ".size"));}
 }
 
-void Index() #Index : {Token t1;}
+void Index() #Index : {Token t1=null;}
 {
-  t1=<ID> | t1=<INTEGER>
-  {jjtThis.setValues(t1.image);}
+  (t1=<INTEGER> | t1=<ID>) {jjtThis.setValues((t1 == null ? "" : t1.image));}
 }

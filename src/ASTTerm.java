@@ -3,10 +3,14 @@
 public
 class ASTTerm extends SimpleNode {
   protected String operator;
-  protected int value;
+  protected String value;
+  protected boolean print;
 
   public ASTTerm(int id) {
     super(id);
+	this.operator="";
+	this.value="";
+	this.print = false;
   }
 
   public ASTTerm(Yal p, int id) {
@@ -14,12 +18,19 @@ class ASTTerm extends SimpleNode {
   }
 
   public void setValues(String value, String operator){
-    this.value = Integer.parseInt(value);
+    this.value = value;
     this.operator = operator;
+	this.print = true;
   }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.operator + " " + this.value; }
+  public boolean print() { return this.print; }
+
+  @Override
+  public String toString() { 
+	//return YalTreeConstants.jjtNodeName[id] + " " + this.operator + " " + this.value; 
+	return this.operator + " " + this.value;
+  }
 
 }
 /* JavaCC - OriginalChecksum=245b857e1e84bf938a9b788e4784c2a1 (do not edit this line) */

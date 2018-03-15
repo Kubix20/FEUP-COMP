@@ -10,5 +10,8 @@ class ASTAssign extends SimpleNode {
     super(p, id);
   }
 
+	@Override
+  public String toString() { return "="; }
+
 }
 /* JavaCC - OriginalChecksum=97bead2d9eac64804e582f54a770a4d6 (do not edit this line) */

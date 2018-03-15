@@ -6,6 +6,7 @@ class ASTIndex extends SimpleNode {
 
   public ASTIndex(int id) {
     super(id);
+	this.value="";
   }
 
   public ASTIndex(Yal p, int id) {
@@ -13,11 +14,11 @@ class ASTIndex extends SimpleNode {
   }
 
   public void setValues(String value){
-    this.value = value;
+	this.value = value;
   }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.value; }
+  public String toString() { return /*YalTreeConstants.jjtNodeName[id] + */ "[" + this.value + "]"; }
 
 
 }
