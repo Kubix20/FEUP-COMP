@@ -16,7 +16,8 @@ class ASTDeclaration extends SimpleNode {
   }
 
   public void setValues(String value){
-    this.assign = value;
+	if(value != "")
+		this.assign = "Assign";
 	this.print = true;
   }
   

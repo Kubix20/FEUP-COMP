@@ -117,7 +117,12 @@ ASTModule Module() #Module : {Token t1;}
 
 void Declaration() #Declaration : {Token t1;}
 {
-  Element() [t1=<ASSIGN>{jjtThis.setValues(t1.image);} (("[" ArraySize() "]") | IntElement())] <PVIRG>
+  try{
+	Element() [t1=<ASSIGN>{jjtThis.setValues(t1.image);} (("[" ArraySize() "]") | IntElement())] <PVIRG>
+  }
+  catch(ParseException e){
+    error_skipto(e, PVIRG, "DECLARATION");
+  }
 }
 
 void Function() #Function : {Token t1;}
@@ -144,14 +149,14 @@ void IntElement() #IntElement : {Token t1 = null, t2 = null;}
   [t1=<ADDSUB_OP>] t2=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
 }
 
-void Varlist() : {}
+void Varlist() #Varlist : {}
 {
   (Element()) (<VIRG> (Element()))*
 }
 
 void Element() #Element : {Token t1 = null, t2 = null, t3 = null;}
 {
-  t1=<ID> [t2="[" [t3=<INTEGER>] "]"]{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image), (t3 == null ? "": t3.image));} 
+  t1=<ID> [t2="[""]"]{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
 }
 
 void Stmtlst() : {}
@@ -166,8 +171,8 @@ void Stmt() : {}
 	While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
   }
   catch(ParseException e){
-	  int[] kinds = {PVIRG, RPAR};
-     error_multskipto(e, kinds, "STATEMENT CALL");
+	int[] kinds = {PVIRG, RPAR};	
+	error_multskipto(e, kinds, "STATEMENT");
   }
 }
 
@@ -175,10 +180,16 @@ void Assign() #Assign : {}
 {
 	Lhs() <ASSIGN>
     try{
-      Rhs() <PVIRG>
+      Rhs() 
 	}
 	catch(ParseException e){
-      error_skipto(e, PVIRG, "RIGHT ASSIGN");
+	  error_skipto(e, PVIRG, "RIGHT ASSIGN");
+    }
+	try{
+		<PVIRG>
+	}
+	catch(ParseException e){
+	 error(e, "RIGHT ASSIGN");
     }
 }
 
@@ -201,20 +212,20 @@ void ArraySize() #ArraySize : {Token t1;}
 
 void Term() #Term : {Token t1=null, t2=null;}
 {
-[t2=<ADDSUB_OP>]
-(t1=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
+  [t2=<ADDSUB_OP>]
+  (t1=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
 }
 
 void Exprtest() #Exprtest : {Token t1;}
 {
   try{
-  <LPAR>
-    Lhs() t1=<RELA_OP>{jjtThis.setValues(t1.image);} Rhs()
-  <RPAR>
-}
-catch(ParseException e){
-  error_skipto(e, RPAR, "EXPRTEST");
-}
+    <LPAR>
+      Lhs() t1=<RELA_OP>{jjtThis.setValues(t1.image);} Rhs()
+    <RPAR>
+  }
+  catch(ParseException e){
+    error_skipto(e, RPAR, "EXPRTEST");
+  }
 }
 
 void While() #While : {}
@@ -256,9 +267,8 @@ void Argument() #Argument : {Token t1;}
   {jjtThis.setValues(t1.image);}
 }
 
-void Access() #Access : {Token t1, t2;}
+void Access() #Access : {Token t1, t2 = null;}
 {
-  {t2=null;}
   t1=<ID> ("[" Index() "]" | ["." t2=<SIZE>])
   {jjtThis.setValues(t1.image, (t2 == null ? "": ".size"));}
 }

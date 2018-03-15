@@ -15,24 +15,15 @@ class ASTElement extends SimpleNode {
     super(p, id);
   }
 
-  public void setValues(String value, String access, String index){
+  public void setValues(String value, String access){
     this.value = value;
-	if(access != ""){
-		if(index != "")
-			this.access = "["+index+"]";
-		else
-			this.access = "[]";
-	}
-	
-	/*
-	if(this.parent.getType() == "ASTFunction")
-		System.out.println("Yes");
-	*/
+	if(access != "")
+		this.access = "[]";
   }
 
   @Override
   public String toString() { 
-	return /*YalTreeConstants.jjtNodeName[id] + " " +*/ this.value + this.access; 
+	return YalTreeConstants.jjtNodeName[id] + " " + this.value + this.access; 
   }
 }
 /* JavaCC - OriginalChecksum=7a5adb44de950c1b6633af76600b4a86 (do not edit this line) */

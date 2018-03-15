@@ -6,18 +6,19 @@ public interface YalTreeConstants
   public int JJTDECLARATION = 2;
   public int JJTFUNCTION = 3;
   public int JJTINTELEMENT = 4;
-  public int JJTELEMENT = 5;
-  public int JJTASSIGN = 6;
-  public int JJTRHS = 7;
-  public int JJTARRAYSIZE = 8;
-  public int JJTTERM = 9;
-  public int JJTEXPRTEST = 10;
-  public int JJTWHILE = 11;
-  public int JJTIF = 12;
-  public int JJTCALL = 13;
-  public int JJTARGUMENT = 14;
-  public int JJTACCESS = 15;
-  public int JJTINDEX = 16;
+  public int JJTVARLIST = 5;
+  public int JJTELEMENT = 6;
+  public int JJTASSIGN = 7;
+  public int JJTRHS = 8;
+  public int JJTARRAYSIZE = 9;
+  public int JJTTERM = 10;
+  public int JJTEXPRTEST = 11;
+  public int JJTWHILE = 12;
+  public int JJTIF = 13;
+  public int JJTCALL = 14;
+  public int JJTARGUMENT = 15;
+  public int JJTACCESS = 16;
+  public int JJTINDEX = 17;
 
 
   public String[] jjtNodeName = {
@@ -26,6 +27,7 @@ public interface YalTreeConstants
     "Declaration",
     "Function",
     "IntElement",
+    "Varlist",
     "Element",
     "Assign",
     "Rhs",
@@ -40,4 +42,4 @@ public interface YalTreeConstants
     "Index",
   };
 }
-/* JavaCC - OriginalChecksum=c361cf6692f9ee2bf80048ec637845e0 (do not edit this line) */
+/* JavaCC - OriginalChecksum=46c5bc0354c6b2fbf3b4ef0754814c32 (do not edit this line) */
