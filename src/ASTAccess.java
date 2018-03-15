@@ -20,7 +20,7 @@ class ASTAccess extends SimpleNode {
 
   @Override
   public String toString() { 
-	return /*YalTreeConstants.jjtNodeName[id] + " " +*/ this.name + this.size; 
+	return "Element " + this.name + this.size; 
   }
 
 

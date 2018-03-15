@@ -201,7 +201,7 @@ void Function()           : {/*@bgen(jjtree) Function */
   try {
 /*@egen*/
   try {
-      <FUNCTION> [LOOKAHEAD(2) Element() <ASSIGN>] t1=<ID>{jjtn000.setValues(t1.image);} <LPAR>
+    <FUNCTION> [LOOKAHEAD(2) Element() <ASSIGN>] t1=<ID>{jjtn000.setValues(t1.image);} <LPAR>
   }
   catch(ParseException e){
     error_skipto(e, LPAR, "FUNCTION DECLARATION");
@@ -397,8 +397,7 @@ void Rhs()      : {/*@bgen(jjtree) Rhs */
 {/*@bgen(jjtree) Rhs */
   try {
 /*@egen*/
-  (Term() [( t1=<ARITH_OP> | t1=<BITWISE_OP> | t1=<ADDSUB_OP> )
-  {jjtn000.setValues(t1.image);}
+  (Term() [( t1=<ARITH_OP> | t1=<BITWISE_OP> | t1=<ADDSUB_OP> ) {jjtn000.setValues(t1.image);}
    Term()])  | "[" ArraySize() "]"/*@bgen(jjtree)*/
   } catch (Throwable jjte000) {
     if (jjtc000) {
@@ -654,9 +653,37 @@ void Call()      : {/*@bgen(jjtree) Call */
 /*@egen*/
 }
 
-void ArgumentList() : {}
-{
-  Argument() (<VIRG> Argument())*
+void ArgumentList()              : {/*@bgen(jjtree) ArgumentList */
+  ASTArgumentList jjtn000 = new ASTArgumentList(JJTARGUMENTLIST);
+  boolean jjtc000 = true;
+  jjtree.openNodeScope(jjtn000);
+  jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/}
+{/*@bgen(jjtree) ArgumentList */
+  try {
+/*@egen*/
+  Argument() (<VIRG> Argument())*/*@bgen(jjtree)*/
+  } catch (Throwable jjte000) {
+    if (jjtc000) {
+      jjtree.clearNodeScope(jjtn000);
+      jjtc000 = false;
+    } else {
+      jjtree.popNode();
+    }
+    if (jjte000 instanceof RuntimeException) {
+      throw (RuntimeException)jjte000;
+    }
+    if (jjte000 instanceof ParseException) {
+      throw (ParseException)jjte000;
+    }
+    throw (Error)jjte000;
+  } finally {
+    if (jjtc000) {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtn000.jjtSetLastToken(getToken(0));
+    }
+  }
+/*@egen*/
 }
 
 void Argument()           : {/*@bgen(jjtree) Argument */
@@ -690,11 +717,10 @@ void Access()         : {/*@bgen(jjtree) Access */
                          boolean jjtc000 = true;
                          jjtree.openNodeScope(jjtn000);
                          jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/Token t1, t2;}
+/*@egen*/Token t1, t2 = null;}
 {/*@bgen(jjtree) Access */
   try {
 /*@egen*/
-  {t2=null;}
   t1=<ID> ("[" Index() "]" | ["." t2=<SIZE>])/*@bgen(jjtree)*/
   {
     jjtree.closeNodeScope(jjtn000, true);

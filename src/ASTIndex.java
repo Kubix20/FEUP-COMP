@@ -18,7 +18,10 @@ class ASTIndex extends SimpleNode {
   }
 
   @Override
-  public String toString() { return /*YalTreeConstants.jjtNodeName[id] + */ "[" + this.value + "]"; }
+  public String toString() { 
+	/*return YalTreeConstants.jjtNodeName[id] +  "[" + this.value + "]";*/
+    return "At " +	this.value;
+  }
 
 
 }

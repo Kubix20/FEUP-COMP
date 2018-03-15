@@ -24,7 +24,7 @@ class ASTRhs extends SimpleNode {
   public boolean print() { return this.print; }
 
   @Override
-  public String toString() { return /*YalTreeConstants.jjtNodeName[id]; + " " + */this.operator; }
+  public String toString() { return "Operator " + this.operator; }
 
 }
 /* JavaCC - OriginalChecksum=597ed5e72fbe47b2ad2ba8d7f544824e (do not edit this line) */

@@ -21,7 +21,7 @@ class ASTIntElement extends SimpleNode {
   }
   
   @Override
-  public String toString() { return this.operator + this.value; }
+  public String toString() { return "Element " + this.operator + this.value; }
 
 }
 /* JavaCC - OriginalChecksum=e96e2e1784b160c5913863d6e47fbde0 (do not edit this line) */

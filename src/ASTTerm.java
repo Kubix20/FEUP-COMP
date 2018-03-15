@@ -28,8 +28,7 @@ class ASTTerm extends SimpleNode {
 
   @Override
   public String toString() { 
-	//return YalTreeConstants.jjtNodeName[id] + " " + this.operator + " " + this.value; 
-	return this.operator + " " + this.value;
+	return "Element " + this.operator + " " + this.value; 
   }
 
 }

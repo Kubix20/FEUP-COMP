@@ -17,7 +17,7 @@ class ASTArgument extends SimpleNode {
   }
 
   @Override
-  public String toString() { return  "Arg " + this.value; }
+  public String toString() { return  YalTreeConstants.jjtNodeName[id] + " " + this.value; }
 
 
 }

@@ -16,9 +16,10 @@ public interface YalTreeConstants
   public int JJTWHILE = 12;
   public int JJTIF = 13;
   public int JJTCALL = 14;
-  public int JJTARGUMENT = 15;
-  public int JJTACCESS = 16;
-  public int JJTINDEX = 17;
+  public int JJTARGUMENTLIST = 15;
+  public int JJTARGUMENT = 16;
+  public int JJTACCESS = 17;
+  public int JJTINDEX = 18;
 
 
   public String[] jjtNodeName = {
@@ -37,9 +38,10 @@ public interface YalTreeConstants
     "While",
     "If",
     "Call",
+    "ArgumentList",
     "Argument",
     "Access",
     "Index",
   };
 }
-/* JavaCC - OriginalChecksum=46c5bc0354c6b2fbf3b4ef0754814c32 (do not edit this line) */
+/* JavaCC - OriginalChecksum=09cb75970b0a9effae2713211ca44c2c (do not edit this line) */

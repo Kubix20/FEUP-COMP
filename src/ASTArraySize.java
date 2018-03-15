@@ -23,7 +23,7 @@ class ASTArraySize extends SimpleNode {
 	return YalTreeConstants.jjtNodeName[id] + " " + this.value;
 	*/
 	if(this.value != "")
-		return "[" + this.value + "]";
+		return "Element [" + this.value + "]";
 	else
 		return "[  ]";
   }

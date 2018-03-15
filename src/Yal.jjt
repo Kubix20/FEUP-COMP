@@ -128,7 +128,7 @@ void Declaration() #Declaration : {Token t1;}
 void Function() #Function : {Token t1;}
 {
   try {
-      <FUNCTION> [LOOKAHEAD(2) Element() <ASSIGN>] t1=<ID>{jjtThis.setValues(t1.image);} <LPAR>
+    <FUNCTION> [LOOKAHEAD(2) Element() <ASSIGN>] t1=<ID>{jjtThis.setValues(t1.image);} <LPAR>
   }
   catch(ParseException e){
     error_skipto(e, LPAR, "FUNCTION DECLARATION");
@@ -200,8 +200,7 @@ void Lhs() : {}
 
 void Rhs() #Rhs : {Token t1;}
 {
-  (Term() [( t1=<ARITH_OP> | t1=<BITWISE_OP> | t1=<ADDSUB_OP> )
-  {jjtThis.setValues(t1.image);}
+  (Term() [( t1=<ARITH_OP> | t1=<BITWISE_OP> | t1=<ADDSUB_OP> ) {jjtThis.setValues(t1.image);}
    Term()])  | "[" ArraySize() "]"
 }
 
@@ -256,7 +255,7 @@ void Call() #Call: {Token t1=null, t2=null;}
   }
 }
 
-void ArgumentList() : {}
+void ArgumentList() #ArgumentList: {}
 {
   Argument() (<VIRG> Argument())*
 }
