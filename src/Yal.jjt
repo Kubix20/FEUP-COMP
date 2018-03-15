@@ -117,7 +117,7 @@ ASTModule Module() #Module : {Token t1;}
 
 void Declaration() #Declaration : {Token t1;}
 {
-  Element() [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] t1=<INTEGER>{jjtThis.setValues(t1.image);})] <PVIRG>
+  Element() [t1=<ASSIGN>{jjtThis.setValues(t1.image);} (("[" ArraySize() "]") | IntElement())] <PVIRG>
 }
 
 void Function() #Function : {Token t1;}
@@ -139,14 +139,19 @@ void Function() #Function : {Token t1;}
     <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
+void IntElement() #IntElement : {Token t1 = null, t2 = null;}
+{
+  [t1=<ADDSUB_OP>] t2=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
+}
+
 void Varlist() : {}
 {
   (Element()) (<VIRG> (Element()))*
 }
 
-void Element() #Element : {Token t1;}
+void Element() #Element : {Token t1 = null, t2 = null, t3 = null;}
 {
-  t1=<ID>{jjtThis.setValues(t1.image);} ["[" [<INTEGER>] "]"]
+  t1=<ID> [t2="[" [t3=<INTEGER>] "]"]{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image), (t3 == null ? "": t3.image));} 
 }
 
 void Stmtlst() : {}

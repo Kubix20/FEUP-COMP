@@ -10,7 +10,7 @@ class ASTAssign extends SimpleNode {
     super(p, id);
   }
 
-	@Override
+  @Override
   public String toString() { return "="; }
 
 }

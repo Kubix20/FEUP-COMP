@@ -2,24 +2,37 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=false,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 public
 class ASTElement extends SimpleNode {
-  protected Object value;
+  protected String value;
+  protected String access;
 
   public ASTElement(int id) {
     super(id);
+	this.value = "";
+	this.access = "";
   }
 
   public ASTElement(Yal p, int id) {
     super(p, id);
   }
 
-  public void setValues(Object value){
+  public void setValues(String value, String access, String index){
     this.value = value;
+	if(access != ""){
+		if(index != "")
+			this.access = "["+index+"]";
+		else
+			this.access = "[]";
+	}
+	
+	/*
+	if(this.parent.getType() == "ASTFunction")
+		System.out.println("Yes");
+	*/
   }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.value; }
-
-
-
+  public String toString() { 
+	return /*YalTreeConstants.jjtNodeName[id] + " " +*/ this.value + this.access; 
+  }
 }
 /* JavaCC - OriginalChecksum=7a5adb44de950c1b6633af76600b4a86 (do not edit this line) */

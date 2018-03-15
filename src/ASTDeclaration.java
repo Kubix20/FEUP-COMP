@@ -2,10 +2,13 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=false,VISITOR=false,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 public
 class ASTDeclaration extends SimpleNode {
-  protected int value;
+  protected String assign;
+  protected boolean print;
 
   public ASTDeclaration(int id) {
     super(id);
+	this.assign = "";
+	this.print = false;
   }
 
   public ASTDeclaration(Yal p, int id) {
@@ -13,11 +16,15 @@ class ASTDeclaration extends SimpleNode {
   }
 
   public void setValues(String value){
-    this.value = Integer.parseInt(value);
+    this.assign = value;
+	this.print = true;
   }
+  
+  @Override
+  public boolean print() { return this.print; }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.value; }
+  public String toString() { return this.assign; }
 
 }
 /* JavaCC - OriginalChecksum=c693116af1da8130a4bb532b400ffe46 (do not edit this line) */

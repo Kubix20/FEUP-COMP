@@ -19,7 +19,5 @@ class ASTFunction extends SimpleNode {
 
   @Override
   public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.name; }
-
-
 }
 /* JavaCC - OriginalChecksum=f96fba650609b3f6cc22d69d6da3cc71 (do not edit this line) */

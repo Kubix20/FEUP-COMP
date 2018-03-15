@@ -1,11 +1,12 @@
 module mymodule {
+    var;
 	a[] = [10];
 	a[] = 1; 
-	N = 100;
+	N = -100;
 	b[] = [N];  
 	b[] = 1;   
 	b[1] = 100;
-	function a=main(){
+	function a=main(a,b){
 		a = [b.size];
 		b = [2];
 		io.print("Hello World");
