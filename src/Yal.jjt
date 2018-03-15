@@ -146,7 +146,7 @@ void Varlist() : {}
 
 void Element() #Element : {Token t1;}
 {
-  t1=<ID>{jjtThis.setValues(t1.image);} ["[" "]"]
+  t1=<ID>{jjtThis.setValues(t1.image);} ["[" [<INTEGER>] "]"]
 }
 
 void Stmtlst() : {}

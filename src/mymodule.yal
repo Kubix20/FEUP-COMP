@@ -1,4 +1,10 @@
 module mymodule {
+	a[] = [10];
+	a[] = 1; 
+	N = 100;
+	b[] = [N];  
+	b[] = 1;   
+	b[1] = 100;
 	function a=main(){
 		a = [b.size];
 		b = [2];
