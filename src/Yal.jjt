@@ -76,6 +76,20 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
 
+
+JAVACODE
+void error_skipto_lookahead(ParseException e, int kind, String whereWasCaught) {
+  ++Yal.nErrors;
+  System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
+  Token t = e.currentToken;
+  //MUST be do while
+  while(getToken(1).kind != kind){
+    t = getNextToken();
+	System.out.println(t);
+  }
+  System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
+}
+
 JAVACODE
 boolean contains(int[] kinds, int kind) {
   for(int i=0; i<kinds.length; i++) {
@@ -159,6 +173,11 @@ void Element() #Element : {Token t1 = null, t2 = null, t3 = null;}
   t1=<ID> [t2="[""]"]{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
 }
 
+void CmpStmtLst() : {}
+{
+   <LCHAVETA> Stmtlst() <RCHAVETA>
+}   
+
 void Stmtlst() : {}
 {
   (Stmt())*
@@ -166,30 +185,58 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-
   try{
-	While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
+    LOOKAHEAD(3)
+  
+    While() | If()  
+
+    |
+  
+    LOOKAHEAD(3)
+  
+    try{
+      Assign()
+    }
+    catch(ParseException e){
+       int[] kinds = {PVIRG, LPAR};
+	   error_multskipto(e, kinds, "STATEMENT ASSIGN");
+    }
+  
+    |
+  
+    (
+	  try{
+		  Call() 
+	  }
+	  catch(ParseException e){
+		  error_skipto_lookahead(e, PVIRG, "FUNCTION CALL");
+	  }
+	
+	  try{
+	     <PVIRG>
+	  }
+	  catch(ParseException e){
+		  System.out.println("PVIIRG " + e.currentToken.image);
+		  if(e.currentToken.image.compareTo("}") != 0)
+		    error(e,"STATEMENT MISSING ;");
+	  }
+    )
   }
   catch(ParseException e){
-	int[] kinds = {PVIRG, RPAR};	
-	error_multskipto(e, kinds, "STATEMENT");
+    int[] kinds = {PVIRG, RCHAVETA};
+	error_multskipto(e,kinds,"STATEMENT");
   }
+
 }
 
 void Assign() #Assign : {}
 {
 	Lhs() <ASSIGN>
     try{
-      Rhs() 
+      Rhs() <PVIRG>
 	}
 	catch(ParseException e){
 	  error_skipto(e, PVIRG, "RIGHT ASSIGN");
-    }
-	try{
-		<PVIRG>
-	}
-	catch(ParseException e){
-	 error(e, "RIGHT ASSIGN");
     }
 }
 
@@ -234,7 +281,17 @@ void While() #While : {}
 
 void If() #If : {}
 {
-  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA>
+  <IF> 
+  
+  try{
+    Exprtest() 
+  }
+  catch(ParseException e){
+	error_skipto_lookahead(e, LCHAVETA, "IF");
+  }
+  
+  <LCHAVETA> Stmtlst() <RCHAVETA>
+  
   try{
 	  [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
   }
@@ -243,15 +300,20 @@ void If() #If : {}
   }
 }
 
-void Call() #Call: {Token t1=null, t2=null;}
+void Call() #Call: {Token t1, t2=null;}
 {
   t1=<ID> ["." t2=<ID>] <LPAR>
   {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
+  
   try{
     [ArgumentList()] <RPAR>
   }
   catch(ParseException e){
     error_skipto(e, RPAR, "FUNCTION CALL ARGS");
+	if(getToken(1).image.compareTo("{") == 0){
+	   System.out.println("Starting call RECOVERY");
+	   CmpStmtLst();
+	}
   }
 }
 
