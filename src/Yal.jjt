@@ -71,7 +71,7 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   //MUST be do while
   do {
     t = getNextToken();
-	System.out.println(t);
+	//System.out.println(t);
   } while (t.kind != kind);
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
@@ -85,7 +85,7 @@ void error_skipto_lookahead(ParseException e, int kind, String whereWasCaught) {
   //MUST be do while
   while(getToken(1).kind != kind){
     t = getNextToken();
-	System.out.println(t);
+	//System.out.println(t);
   }
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
@@ -98,6 +98,7 @@ boolean contains(int[] kinds, int kind) {
   }
   return false;
 }
+
 JAVACODE
 void error_multskipto(ParseException e, int[] kinds, String whereWasCaught) {
   ++Yal.nErrors;
@@ -106,7 +107,7 @@ void error_multskipto(ParseException e, int[] kinds, String whereWasCaught) {
   //MUST be do while
   do {
     t = getNextToken();
-	System.out.println(t);
+	//System.out.println(t);
   } while (!contains(kinds,t.kind));
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
