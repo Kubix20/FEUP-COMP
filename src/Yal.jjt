@@ -76,6 +76,20 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
 
+
+JAVACODE
+void error_skipto_lookahead(ParseException e, int kind, String whereWasCaught) {
+  ++Yal.nErrors;
+  System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
+  Token t = e.currentToken;
+  //MUST be do while
+  while(getToken(1).kind != kind){
+    t = getNextToken();
+	System.out.println(t);
+  }
+  System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
+}
+
 JAVACODE
 boolean contains(int[] kinds, int kind) {
   for(int i=0; i<kinds.length; i++) {
@@ -103,11 +117,11 @@ void error(ParseException e, String whereWasCaught) {
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
 }
 
-ASTModule Module() #Module : {}
+ASTModule Module() #Module : {Token t1;}
 {
-  <MODULE> <ID> <LCHAVETA> (Declaration())* (Function())* 
+  <MODULE> t1=<ID>{jjtThis.setValues(t1.image);} <LCHAVETA> (Declaration())* (Function())*
   try {
-	<RCHAVETA> 
+	<RCHAVETA>
   }
   catch(ParseException e){
     error_skipto(e, RCHAVETA, "BEFORE MODULE END");
@@ -115,15 +129,20 @@ ASTModule Module() #Module : {}
   {return jjtThis;}
 }
 
-void Declaration() #Declaration : {}
+void Declaration() #Declaration : {Token t1;}
 {
-  Element() [<ASSIGN> (("[" ArraySize() "]") | [<ADDSUB_OP>] <INTEGER>)] <PVIRG>
+  try{
+	Element() [t1=<ASSIGN>{jjtThis.setValues(t1.image);} (("[" ArraySize() "]") | IntElement())] <PVIRG>
+  }
+  catch(ParseException e){
+    error_skipto(e, PVIRG, "DECLARATION");
+  }
 }
 
-void Function() #Function : {}
+void Function() #Function : {Token t1;}
 {
   try {
-      <FUNCTION> Element() [<ASSIGN> <ID>] <LPAR>
+    <FUNCTION> [LOOKAHEAD(2) Element() <ASSIGN>] t1=<ID>{jjtThis.setValues(t1.image);} <LPAR>
   }
   catch(ParseException e){
     error_skipto(e, LPAR, "FUNCTION DECLARATION");
@@ -139,15 +158,25 @@ void Function() #Function : {}
     <LCHAVETA> Stmtlst() <RCHAVETA>
 }
 
-void Varlist() : {}
+void IntElement() #IntElement : {Token t1 = null, t2 = null;}
+{
+  [t1=<ADDSUB_OP>] t2=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
+}
+
+void Varlist() #Varlist : {}
 {
   (Element()) (<VIRG> (Element()))*
 }
 
-void Element() #Element : {}
+void Element() #Element : {Token t1 = null, t2 = null, t3 = null;}
 {
-  <ID> ["[" "]"]
+  t1=<ID> [t2="[""]"]{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
 }
+
+void CmpStmtLst() : {}
+{
+   <LCHAVETA> Stmtlst() <RCHAVETA>
+}   
 
 void Stmtlst() : {}
 {
@@ -156,14 +185,48 @@ void Stmtlst() : {}
 
 void Stmt() : {}
 {
-	
   try{
-	While() | If() | LOOKAHEAD(3) Assign() | Call() <PVIRG>
+    LOOKAHEAD(3)
+  
+    While() | If()  
+
+    |
+  
+    LOOKAHEAD(3)
+  
+    try{
+      Assign()
+    }
+    catch(ParseException e){
+       int[] kinds = {PVIRG, LPAR};
+	   error_multskipto(e, kinds, "STATEMENT ASSIGN");
+    }
+  
+    |
+  
+    (
+	  try{
+		  Call() 
+	  }
+	  catch(ParseException e){
+		  error_skipto_lookahead(e, PVIRG, "FUNCTION CALL");
+	  }
+	
+	  try{
+	     <PVIRG>
+	  }
+	  catch(ParseException e){
+		  System.out.println("PVIIRG " + e.currentToken.image);
+		  if(e.currentToken.image.compareTo("}") != 0)
+		    error(e,"STATEMENT MISSING ;");
+	  }
+    )
   }
   catch(ParseException e){
-	  int[] kinds = {PVIRG, RPAR};
-     error_multskipto(e, kinds, "STATEMENT CALL");
+    int[] kinds = {PVIRG, RCHAVETA};
+	error_multskipto(e,kinds,"STATEMENT");
   }
+
 }
 
 void Assign() #Assign : {}
@@ -173,7 +236,7 @@ void Assign() #Assign : {}
       Rhs() <PVIRG>
 	}
 	catch(ParseException e){
-      error_skipto(e, PVIRG, "RIGHT ASSIGN");
+	  error_skipto(e, PVIRG, "RIGHT ASSIGN");
     }
 }
 
@@ -182,31 +245,33 @@ void Lhs() : {}
   Access()
 }
 
-void Rhs() : {}
+void Rhs() #Rhs : {Token t1;}
 {
-  (Term() [( <ARITH_OP> | <BITWISE_OP> | <ADDSUB_OP> ) Term()])  | "[" ArraySize() "]"
+  (Term() [( t1=<ARITH_OP> | t1=<BITWISE_OP> | t1=<ADDSUB_OP> ) {jjtThis.setValues(t1.image);}
+   Term()])  | "[" ArraySize() "]"
 }
 
-void ArraySize() : {}
+void ArraySize() #ArraySize : {Token t1;}
 {
-  Access() | <INTEGER>
+  Access() | t1=<INTEGER>{jjtThis.setValues(t1.image);}
 }
 
-void Term() : {}
+void Term() #Term : {Token t1=null, t2=null;}
 {
- [<ADDSUB_OP>] (<INTEGER> | LOOKAHEAD(3) Call() | Access())
+  [t2=<ADDSUB_OP>]
+  (t1=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
 }
 
-void Exprtest() : {}
+void Exprtest() #Exprtest : {Token t1;}
 {
   try{
-  <LPAR>
-    Lhs() <RELA_OP> Rhs()
-  <RPAR>
-}
-catch(ParseException e){
-  error_skipto(e, RPAR, "EXPRTEST");
-}
+    <LPAR>
+      Lhs() t1=<RELA_OP>{jjtThis.setValues(t1.image);} Rhs()
+    <RPAR>
+  }
+  catch(ParseException e){
+    error_skipto(e, RPAR, "EXPRTEST");
+  }
 }
 
 void While() #While : {}
@@ -216,7 +281,17 @@ void While() #While : {}
 
 void If() #If : {}
 {
-  <IF> Exprtest() <LCHAVETA> Stmtlst() <RCHAVETA> 
+  <IF> 
+  
+  try{
+    Exprtest() 
+  }
+  catch(ParseException e){
+	error_skipto_lookahead(e, LCHAVETA, "IF");
+  }
+  
+  <LCHAVETA> Stmtlst() <RCHAVETA>
+  
   try{
 	  [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
   }
@@ -225,33 +300,41 @@ void If() #If : {}
   }
 }
 
-void Call() #Call: {}
+void Call() #Call: {Token t1, t2=null;}
 {
-  <ID> ["." <ID>] <LPAR>
+  t1=<ID> ["." t2=<ID>] <LPAR>
+  {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
+  
   try{
     [ArgumentList()] <RPAR>
   }
   catch(ParseException e){
     error_skipto(e, RPAR, "FUNCTION CALL ARGS");
+	if(getToken(1).image.compareTo("{") == 0){
+	   System.out.println("Starting call RECOVERY");
+	   CmpStmtLst();
+	}
   }
 }
 
-void ArgumentList() : {}
+void ArgumentList() #ArgumentList: {}
 {
   Argument() (<VIRG> Argument())*
 }
 
-void Argument() : {}
+void Argument() #Argument : {Token t1;}
 {
-  (<ID> | <STRING> | <INTEGER>)
+  (t1=<ID> | t1=<STRING> | t1=<INTEGER>)
+  {jjtThis.setValues(t1.image);}
 }
 
-void Access() : {}
+void Access() #Access : {Token t1, t2 = null;}
 {
-  <ID> ("[" Index() "]" | ["." <SIZE>])
+  t1=<ID> ("[" Index() "]" | ["." t2=<SIZE>])
+  {jjtThis.setValues(t1.image, (t2 == null ? "": ".size"));}
 }
 
-void Index() : {}
+void Index() #Index : {Token t1=null;}
 {
-  <ID> | <INTEGER>
+  (t1=<INTEGER> | t1=<ID>) {jjtThis.setValues((t1 == null ? "" : t1.image));}
 }
