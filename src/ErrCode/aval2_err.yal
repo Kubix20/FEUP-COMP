@@ -1,0 +1,19 @@
+module aval2_err
+{
+
+function c=f(a, b) {
+    if(a == b) {
+         c = 2;
+    } else c=3; // error 1
+}
+
+function main1()
+{
+ c=f(2,12);
+
+ c=f(4,2);
+
+ c=3.5; // error 2
+}
+
+}

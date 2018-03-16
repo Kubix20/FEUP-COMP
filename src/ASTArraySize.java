@@ -25,7 +25,7 @@ class ASTArraySize extends SimpleNode {
 	if(this.value != "")
 		return "Element [" + this.value + "]";
 	else
-		return "[  ]";
+		return "At";
   }
 }
 /* JavaCC - OriginalChecksum=074776620eae5525dec8029d81b72b40 (do not edit this line) */

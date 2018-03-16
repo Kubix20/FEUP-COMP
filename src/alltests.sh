@@ -2,13 +2,13 @@
 jjtree Yal.jjt
 javacc Yal.jj
 javac *.java
-java Yal array2_err.yal
-java Yal array4_err.yal
-java Yal aval1_err.yal
-java Yal aval2_err.yal
-java Yal aval3_err.yal
-java Yal aval4_err.yal
-java Yal aval5_err.yal
-java Yal aval6_err.yal
-java Yal aval7_err.yal
-java Yal err1.yal
+java Yal ErrCode/array2_err.yal
+java Yal ErrCode/array4_err.yal
+java Yal ErrCode/aval1_err.yal
+java Yal ErrCode/aval2_err.yal
+java Yal ErrCode/aval3_err.yal
+java Yal ErrCode/aval4_err.yal
+java Yal ErrCode/aval5_err.yal
+java Yal ErrCode/aval6_err.yal
+java Yal ErrCode/aval7_err.yal
+java Yal ErrCode/err1.yal
