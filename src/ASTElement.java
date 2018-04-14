@@ -20,6 +20,9 @@ class ASTElement extends SimpleNode {
 	if(access != "")
 		this.access = "[]";
   }
+  
+  @Override
+  public String getValue(){ return this.value + this.access; }
 
   @Override
   public String toString() { 

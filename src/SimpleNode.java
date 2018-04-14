@@ -62,6 +62,8 @@ class SimpleNode implements Node {
      toString(String), otherwise overriding toString() is probably all
      you need to do. */
 
+
+  public String getValue() { return ""; }
   public String toString() { return YalTreeConstants.jjtNodeName[id]; }
   public String toString(String prefix) { return prefix + toString(); }
   

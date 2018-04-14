@@ -20,6 +20,9 @@ public class Yal {
     Yal parser = new Yal(new FileReader(args[0]));
     ASTModule root = parser.Module();
     root.dump(">");
+	SymbolTable sy = new SymbolTable();
+	sy.analyze(root); //Semantic analysis
+	sy.print();
     System.out.println("Program parsed with "+Yal.nErrors+" errors");
   }
 }
