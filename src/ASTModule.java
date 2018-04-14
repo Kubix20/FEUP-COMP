@@ -4,7 +4,6 @@ public
 class ASTModule extends SimpleNode {
   protected String name;
 
-
   public ASTModule(int id) {
     super(id);
   }
@@ -16,6 +15,8 @@ class ASTModule extends SimpleNode {
   public void setValues(String value){
     this.name = value;
   }
+  
+  public String getValue(){ return name; }
 
   @Override
   public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.name; }
