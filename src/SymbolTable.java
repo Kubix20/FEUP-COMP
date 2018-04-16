@@ -15,6 +15,19 @@ public class SymbolTable{
 		this.errors = new ArrayList<String>();
 	}
 	
+	public static boolean isInt(String i)
+	{
+		return i.matches("^\\d+");
+	}
+	
+	public void stAssign(SimpleNode node){
+		
+	}
+	
+	public void stCall(SimpleNode node){
+		
+	}
+	
 	public void stStmt(SimpleNode node){
 		
 	}
@@ -24,7 +37,73 @@ public class SymbolTable{
 	}
 	
 	public void stFunction(SimpleNode node){
+		String functionName = node.getValue();
+		System.out.println("Function Name: "+functionName);
+		String returnName="";
+		String returnType="void";
+		String comp=null;
+		int currChild=0;
 		
+		if (functionName.indexOf(".")!=-1) {
+			functionName = functionName.substring(functionName.indexOf(".")+1);
+			logWarning(1,"Function name contains '.' ." +"Name changed to "+functionName);
+		}
+		
+		if (functions.containsKey(functionName)) {
+			logError(1,"Function "+functionName+"already declared");
+			return;
+		}
+		
+		if ( ((SimpleNode) node.jjtGetChild(currChild)).getId() == YalTreeConstants.JJTELEMENT ) {
+			returnType="integer";
+			
+			//para efeitos de comparacao retira-se apenas o nome da variavel
+			comp = ((SimpleNode) node.jjtGetChild(currChild)).getValue();
+			if(comp.indexOf("[]")!=-1)
+			{
+				comp = comp.substring(0, comp.indexOf("["));
+				returnType="array";
+			}
+			returnName=comp;
+			currChild++;
+			System.out.println("Retorno: " + returnName + " "+ returnType);
+		}
+		
+		Function function = new Function(functionName, returnName, returnType);
+		
+		//verifica se tem parametros
+		if ( ((SimpleNode) node.jjtGetChild(currChild)).getId() == YalTreeConstants.JJTVARLIST ) {
+			for (int i=0; i<node.jjtGetChild(currChild).jjtGetNumChildren();i++) {
+				String paramName = ((SimpleNode) node.jjtGetChild(currChild).jjtGetChild(i)).getValue();
+				String paramType="integer";
+
+				if(paramName.indexOf("[]")!=-1)
+				{
+					paramName = paramName.substring(0, paramName.indexOf("["));
+					paramType="array";
+				}
+				
+				//testa se nao e repetido
+				if ( (!function.containsParameter(paramName)) ){
+					
+					if (comp!=null) { 
+						if (paramName.compareTo(comp)==0) {
+							logError(1,"Argument name may cannot be equal to the return");
+							return;
+						}
+					}
+					function.addParameter(paramName,paramType);
+				} 
+				else {
+					logError(1,"Repeated Argument");
+					return;
+				}				
+			}
+			currChild++;
+		}
+		
+		//add function
+		functions.put(functionName, function);
 	}
 	
 	public void stDeclaration(SimpleNode node){
@@ -59,7 +138,7 @@ public class SymbolTable{
 			if(node.getId() == YalTreeConstants.JJTFUNCTION)
 			{
 				System.out.println("Function");
-				//stFunction(node);
+				stFunction(node);
 			}
 		}
 	}
@@ -103,13 +182,32 @@ public class SymbolTable{
 		String functionsStr="";
 		for (String name: this.functions.keySet()){
             String value = this.functions.get(name).toString();
-            functionsStr += "      "+value+doubleNewLine;
+            functionsStr += value+doubleNewLine;
 		}
 	
 		String content= "Module "+this.module+newLine+
 						"Global declarations:"+newLine+declarations+
-						"Functions: "+ functionsStr;			
+						"Functions:"+newLine+functionsStr;	
 					 
 		System.out.println(content);
+	}
+	
+	public boolean printErrors(){
+		if(errors.size() == 0)
+			return false;
+		
+		String newLine = System.lineSeparator();
+		for(String error : errors)
+			System.out.println(error+newLine);
+		
+		return true;
+	}
+	
+	private void logWarning(int line, String msg){
+		errors.add("Warning on line " +line+": "+msg);
+	}
+	
+	private void logError(int line, String msg){
+		errors.add("Error on line " +line+": "+msg);
 	}
 }

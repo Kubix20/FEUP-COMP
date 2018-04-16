@@ -5,32 +5,65 @@ public class Function {
 	
 	public String name;
 	public boolean declared;
-	public ArrayList<String> parameters;
-	public ArrayList<String> paramtype;
+	public ArrayList<Declaration> parameters;
 	public HashMap<String, Declaration> localDeclarations;
 	public Declaration ret;
 	
 	public Function(){
 		name="";
 		declared=false;
-		parameters = new ArrayList<String>();
-		paramtype = new ArrayList<String>();
+		parameters = new ArrayList<Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
 	};
 	
-	public Function(String n, String r, String rn){
-		name=n;
-		ret=new Declaration(rn,r);
+	public Function(String name, String returnName, String returnType){
+		this.name=name;
+		ret=new Declaration(returnName,returnType);
 		declared=false;
-		parameters = new ArrayList<String>();
-		paramtype = new ArrayList<String>();
+		parameters = new ArrayList<Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
 	};
 
 	public String toString(){
-		if (ret.type.compareTo("void")==0) {
-			return "Function " + name;
+		String newLine = System.lineSeparator();
+		String doubleNewLine = newLine+newLine;
+	
+		String params="";
+		for (Declaration parameter : parameters){
+            params += "         "+parameter+newLine;
 		}
-		return "Function " + name + " with return value";
+	
+		String locals ="";
+		for (String name: localDeclarations.keySet()){
+            String value = localDeclarations.get(name).toString();
+            locals += "         "+value+newLine;
+		}
+		
+		String retStr = "void";
+		if(ret.type.compareTo("void")!=0)
+			retStr = ret.toString();
+	
+		String content= "   Function "+name+newLine+
+						"      Params:"+newLine+params+
+						"      Locals:"+newLine+locals+
+						"      Return:"+newLine+
+						"         "+retStr;
+		
+		
+		return content;
+	}
+	
+	public boolean containsParameter(String name){
+		for(Declaration parameter : parameters){
+			if(parameter.name.compareTo(name) == 0)
+				return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean addParameter(String name, String type){
+		parameters.add(new Declaration(name,type));
+		return true;
 	}
 }

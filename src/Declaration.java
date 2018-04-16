@@ -16,42 +16,42 @@ public class Declaration {
 		local = -1;
 	}
 	
-	public Declaration(String n){
-		name = n;
+	public Declaration(String name){
+		this.name = name;
 		init = false;
 		local = -1;
 	}
 	
-	public Declaration(String n, String t){
-		name = n;
-		type = t;
+	public Declaration(String name, String type){
+		this.name = name;
+		this.type = type;
 		init = false;
 		local = -1;
 	}
 
 	
-	public Declaration(String t, int l){
+	public Declaration(String type, int local){
 		name = "";
-		type = t;
+		this.type = type;
 		init = false;
-		local = l;
+		this.local = local;
 	}
 	
-	public void initArray (int s){
+	public void initArray (int size){
 		if(!init)
 		{
 			init = true;
-			size = s;
-			values = new int[s];
+			this.size = size;
+			values = new int[size];
 			type = "array";
 		}
 	}
 	
-	public void initInt (int val){
+	public void initInt (int value){
 		if(!init)
 		{
 			init = true;
-			value = val;
+			this.value = value;
 			type = "inteiro";
 		}
 	}
@@ -59,13 +59,15 @@ public class Declaration {
 	public String toString(){
 		String str="";
 
-		if(!init)
-			str= "Variavel " + name + " declarada";
+		str= "Var "+name+":"+type;
+		
+		/*
 		else
 		if(type.compareTo("inteiro") == 0 && init)
 				str=name + " inicializado com o valor " + value;
 		else if (type.compareTo("array") == 0 && init)
 				str=name + " inicializado com tamanho " + size;
+		*/
 		
 		return str;
 	}

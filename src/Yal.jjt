@@ -22,7 +22,8 @@ public class Yal {
     root.dump(">");
 	SymbolTable sy = new SymbolTable();
 	sy.analyze(root); //Semantic analysis
-	sy.print();
+	if(!sy.printErrors())
+		sy.print();
     System.out.println("Program parsed with "+Yal.nErrors+" errors");
   }
 }

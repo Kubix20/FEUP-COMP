@@ -1,21 +1,25 @@
 module mymodule {
     var;
+	a;
+	/*
 	a[] = [10];
 	a[] = 1; 
+	*/
 	N = -100;
 	b[] = [N];  
 	b[] = 1;   
-	function a=main(a,b){
+	function ret=main(a,b){
 		a = [b.size];
 		b = [2];
 		io.print("Hello World");
-		while(i<M) { 
+		while(i<M) {
 			a=d[0];
 			i[0]=i+1; 
 			b=d[i];
 			mx=library1.max(a,b);
 			mn=library1.min(a,b);
 		}
+		ret = a;
 	}
 
 	function cenas() {
