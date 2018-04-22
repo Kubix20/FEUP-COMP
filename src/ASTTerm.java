@@ -25,6 +25,9 @@ class ASTTerm extends SimpleNode {
 
   @Override
   public boolean print() { return this.print; }
+  
+  @Override
+  public String getValue(){ return this.operator + " " + this.value; }
 
   @Override
   public String toString() { 

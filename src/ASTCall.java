@@ -3,7 +3,6 @@
 public
 class ASTCall extends SimpleNode {
   protected String name;
-  protected String functionName;
 
   public ASTCall(int id) {
     super(id);
@@ -13,13 +12,17 @@ class ASTCall extends SimpleNode {
     super(p, id);
   }
 
-  public void setValues(String value, String functionName){
-    this.name = value;
-    this.functionName = functionName;
+  public void setValues(String name1, String name2){
+	this.name = name1;
+	if(name2 != "")
+		this.name += "."+ name2;
   }
 
   @Override
-  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.name + "." + this.functionName; }
+  public String getValue(){ return this.name; }
+  
+  @Override
+  public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.name; }
 
 
 }

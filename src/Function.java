@@ -1,18 +1,19 @@
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 
 public class Function {
 	
 	public String name;
 	public boolean declared;
-	public ArrayList<Declaration> parameters;
+	public LinkedHashMap<String, Declaration> parameters;
 	public HashMap<String, Declaration> localDeclarations;
 	public Declaration ret;
 	
 	public Function(){
 		name="";
 		declared=false;
-		parameters = new ArrayList<Declaration>();
+		parameters = new LinkedHashMap<String, Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
 	};
 	
@@ -20,17 +21,18 @@ public class Function {
 		this.name=name;
 		ret=new Declaration(returnName,returnType);
 		declared=false;
-		parameters = new ArrayList<Declaration>();
+		parameters = new LinkedHashMap<String, Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
 	};
 
 	public String toString(){
 		String newLine = System.lineSeparator();
 		String doubleNewLine = newLine+newLine;
-	
-		String params="";
-		for (Declaration parameter : parameters){
-            params += "         "+parameter+newLine;
+		
+		String params ="";
+		for (String name: parameters.keySet()){
+            String value = parameters.get(name).toString();
+            params += "         "+value+newLine;
 		}
 	
 		String locals ="";
@@ -53,17 +55,8 @@ public class Function {
 		return content;
 	}
 	
-	public boolean containsParameter(String name){
-		for(Declaration parameter : parameters){
-			if(parameter.name.compareTo(name) == 0)
-				return true;
-		}
-		
-		return false;
-	}
-	
 	public boolean addParameter(String name, String type){
-		parameters.add(new Declaration(name,type));
+		parameters.put(name, new Declaration(name,type));
 		return true;
 	}
 }

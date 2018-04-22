@@ -6,15 +6,22 @@ module mymodule {
 	a[] = 1; 
 	*/
 	N = -100;
+	/*
 	b[] = [N];  
-	b[] = 1;   
-	function ret=main(a,b){
+	b[] = 1; 
+	*/
+	b;
+	function ret=main(c,d[]){
 		a = [b.size];
 		b = [2];
+		i = -1;
+		M = 3;
+		cenas();
+		f1(N,b);
 		io.print("Hello World");
 		while(i<M) {
 			a=d[0];
-			i[0]=i+1; 
+			i[0]=+i+1;
 			b=d[i];
 			mx=library1.max(a,b);
 			mn=library1.min(a,b);
@@ -23,7 +30,10 @@ module mymodule {
 	}
 
 	function cenas() {
-		a[0] = -2+2;
+		a = -2+2;
 		b = [2];
 	}
+	
+	function f1(d, g[]) {
+	}  
 }

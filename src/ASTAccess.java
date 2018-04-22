@@ -17,6 +17,9 @@ class ASTAccess extends SimpleNode {
     this.name = value;
     this.size = size;
   }
+  
+  @Override
+  public String getValue(){ return this.name + this.size; }
 
   @Override
   public String toString() { 

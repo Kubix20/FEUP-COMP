@@ -1,5 +1,4 @@
 
-
 public class Declaration {
 	
 	public String name;
@@ -18,6 +17,7 @@ public class Declaration {
 	
 	public Declaration(String name){
 		this.name = name;
+		type = "undefined";
 		init = false;
 		local = -1;
 	}
@@ -37,6 +37,22 @@ public class Declaration {
 		this.local = local;
 	}
 	
+	public void init(String type){
+		if(type.compareTo("integer") == 0)
+			initInt();
+		
+		else if(type.compareTo("array") == 0)
+			initArray();
+	}
+	
+	public void initArray (){
+		if(!init)
+		{
+			init = true;
+			type = "array";
+		}
+	}
+	
 	public void initArray (int size){
 		if(!init)
 		{
@@ -47,13 +63,29 @@ public class Declaration {
 		}
 	}
 	
+	public void initInt (){
+		if(!init)
+		{
+			init = true;
+			type = "integer";
+		}
+	}
+	
 	public void initInt (int value){
 		if(!init)
 		{
 			init = true;
 			this.value = value;
-			type = "inteiro";
+			type = "integer";
 		}
+	}
+	
+	public boolean isInt(){
+		return type.compareTo("integer") == 0;
+	}
+	
+	public boolean isArray(){
+		return type.compareTo("array") == 0;
 	}
 	
 	public String toString(){

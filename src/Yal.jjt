@@ -21,9 +21,10 @@ public class Yal {
     ASTModule root = parser.Module();
     root.dump(">");
 	SymbolTable sy = new SymbolTable();
-	sy.analyze(root); //Semantic analysis
-	if(!sy.printErrors())
-		sy.print();
+	sy.analyse(root); //Semantic analysis
+	//if(!sy.printErrors())
+	sy.print();
+	sy.printErrors();
     System.out.println("Program parsed with "+Yal.nErrors+" errors");
   }
 }
