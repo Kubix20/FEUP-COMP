@@ -56,9 +56,11 @@ public class SymbolTable{
 				System.out.println("2nd Term");
 				type2 = stTerm((SimpleNode) rhs.jjtGetChild(1));
 				System.out.println("Type2: "+type2);
+				
+				if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
+					logError(1,"Incompatible types for arithmetic expression");
+				}
 			}
-			else
-				rhsType = type1;			
 			
 			if(lhs.type.compareTo(rhsType) == 0){
 				lhs.init = true;
@@ -67,7 +69,7 @@ public class SymbolTable{
 				if(lhs.type.compareTo("undefined") == 0)
 					lhs.init(rhsType);
 				else
-					logError(1,"Imcopatible types "+lhs.name);
+					logError(1,"Incompatible types "+lhs.name);
 			}
 		}
 		else
@@ -82,7 +84,7 @@ public class SymbolTable{
 				if(lhs.type.compareTo("undefined") == 0)
 					lhs.initArray();
 				else
-					logError(1,"Imcopatible types "+lhs.name);
+					logError(1,"Incompatible types "+lhs.name);
 			}
 			
 			/*
@@ -207,13 +209,11 @@ public class SymbolTable{
 				var = stAccess(child);
 				
 				if(var != null){
-					System.out.println(var.toString());
-				
 					if(op != "" && var.isArray()){
-						logError(1,"Illegal use of operator on array");
+						logError(1,"Illegal use of operator on array type");
 						return "void";
 					}
-					
+				
 					return var.type;
 				}
 			}
@@ -266,10 +266,10 @@ public class SymbolTable{
 						Declaration index = lookupVariable(indexName);
 						if(var != null){
 							if(!var.init)
-								logError(1,"Index "+indexName+" access of variable "+name+"not initialized");
+								logError(1,"Index "+indexName+" access of variable "+name+" not initialized");
 						}
 						else
-							logError(1,"Index "+indexName+" access of variable "+indexName+" not declared");
+							logError(1,"Index "+indexName+" access of variable "+name+" not declared");
 					}
 				}
 				else
@@ -309,7 +309,7 @@ public class SymbolTable{
 						Declaration index = lookupVariable(indexName);
 						if(var != null){
 							if(!var.init)
-								logError(1,"Index "+indexName+" access of variable "+name+"not initialized");
+								logError(1,"Index "+indexName+" access of variable "+name+" not initialized");
 						}
 						else
 							logError(1,"Index "+indexName+" access of variable "+indexName+" not declared");
