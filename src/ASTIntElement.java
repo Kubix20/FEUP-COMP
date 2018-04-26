@@ -21,6 +21,9 @@ class ASTIntElement extends SimpleNode {
   }
   
   @Override
+  public String getValue(){ return this.operator + " " + this.value; }
+  
+  @Override
   public String toString() { return "Element " + this.operator + this.value; }
 
 }

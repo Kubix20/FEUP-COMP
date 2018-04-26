@@ -3,12 +3,13 @@ public class Declaration {
 	
 	public String name;
 	public String type;
+	public String access;
+	public boolean global;
 	public boolean init;
 	public int value;
 	public int values[];
 	public int size;
 	public int local;
-	
 	
 	public Declaration(){
 		init = false;
@@ -19,22 +20,16 @@ public class Declaration {
 		this.name = name;
 		type = "undefined";
 		init = false;
+		global = false;
 		local = -1;
 	}
 	
-	public Declaration(String name, String type){
+	public Declaration(String name, String type, boolean global){
 		this.name = name;
 		this.type = type;
 		init = false;
+		this.global = global;
 		local = -1;
-	}
-
-	
-	public Declaration(String type, int local){
-		name = "";
-		this.type = type;
-		init = false;
-		this.local = local;
 	}
 	
 	public void init(String type){
@@ -63,6 +58,13 @@ public class Declaration {
 		}
 	}
 	
+	public boolean isInitialized(){	
+		if(global)
+			return true;
+		else
+			return init;
+	}
+	
 	public void initInt (){
 		if(!init)
 		{
@@ -86,6 +88,22 @@ public class Declaration {
 	
 	public boolean isArray(){
 		return type.compareTo("array") == 0;
+	}
+	
+	public boolean isUndefined(){
+		return type.compareTo("undefined") == 0;
+	}
+	
+	public boolean intAccess(){
+		return access.compareTo("integer") == 0;
+	}
+	
+	public boolean arrayAccess(){
+		return access.compareTo("array") == 0;
+	}
+	
+	public boolean undefinedAccess(){
+		return access.compareTo("undefined") == 0;
 	}
 	
 	public String toString(){

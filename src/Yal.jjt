@@ -3,6 +3,7 @@ options {
   MULTI=true;
   IGNORE_CASE=true;
   NODE_DEFAULT_VOID=true;
+  NODE_SCOPE_HOOK=true;
   TRACK_TOKENS=true;
 }
 
@@ -17,15 +18,25 @@ public class Yal {
 	System.out.println(newline+newline+
 					   "<<<<<<<< Parsing file "+ args[0]+ " >>>>>>>>>"+
 					   newline+newline);
+	int errors;
     Yal parser = new Yal(new FileReader(args[0]));
     ASTModule root = parser.Module();
     root.dump(">");
+	if(Yal.nErrors > 0){
+		System.out.println("Program parsed with "+Yal.nErrors+" errors");
+		return;
+	}
+	
 	SymbolTable sy = new SymbolTable();
 	sy.analyse(root); //Semantic analysis
-	//if(!sy.printErrors())
 	sy.print();
-	sy.printErrors();
-    System.out.println("Program parsed with "+Yal.nErrors+" errors");
+	errors = sy.printErrors();
+    if(errors > 0){
+		System.out.println("Program parsed with "+errors+" errors");
+		return;
+	}
+	
+	System.out.println("Program parsed successfully!");
   }
 }
 PARSER_END(Yal)
@@ -67,6 +78,14 @@ PARSER_END(Yal)
   | <#DIGIT: ["0"-"9"]>
   | <STRING: "\"" (["a"-"z","A"-"Z","0"-"9",":"," ","="])+ "\"">
 }
+JAVACODE
+void jjtreeOpenNodeScope(Node n){
+	((SimpleNode) n).setLine(getToken(1).beginLine); 
+}
+
+JAVACODE
+void jjtreeCloseNodeScope(Node n){}
+
 
 JAVACODE
 void error_skipto(ParseException e, int kind, String whereWasCaught) {

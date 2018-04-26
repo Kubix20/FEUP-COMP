@@ -7,6 +7,7 @@ class SimpleNode implements Node {
   protected Node[] children;
   protected int id;
   protected Object value;
+  protected int line;
   protected Yal parser;
   protected Token firstToken;
   protected Token lastToken;
@@ -50,6 +51,10 @@ class SimpleNode implements Node {
 
   public void jjtSetValue(Object value) { this.value = value; }
   public Object jjtGetValue() { return value; }
+  
+  
+  public void setLine(int line){ this.line = line; }
+  public int getLine(){ return line; }
 
   public Token jjtGetFirstToken() { return firstToken; }
   public void jjtSetFirstToken(Token token) { this.firstToken = token; }

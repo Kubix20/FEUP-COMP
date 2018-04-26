@@ -1,0 +1,6 @@
+module example{
+	m;
+	function m=f1(m){
+		m = m+3;
+	}
+}

@@ -1,24 +1,36 @@
 module mymodule {
     var;
-	a;
-	/*
-	a[] = [10];
-	a[] = 1; 
-	*/
+	/*a;*/
+	/*a = [10];*/
+	a = 1;
 	N = -100;
-	/*
-	b[] = [N];  
-	b[] = 1; 
-	*/
-	b;
-	function ret=main(c,d[]){
+	/*b[] = [N]; */
+	b = [1];
+	/*b;*/
+	function c[]=main(c,d[]){
 		a = [b.size];
 		b = [2];
+		b = [3];
+		b = 5;
 		i = -1;
+		h = [b.size];
+		b = h;
+		h = 3;
+		h = b.size;
+		i = N+a;
 		M = 3;
+		if(a > b.size){
+			io.print("Hello World");
+		}
 		cenas();
-		f1(N,b);
+		f1(var,b);
 		io.print("Hello World");
+		if(M>a){
+			y = M+2;
+		}
+		else{
+			y = M+3;
+		}
 		while(i<M) {
 			a=d[0];
 			i[0]=+i+1;
@@ -27,7 +39,9 @@ module mymodule {
 			mx=library1.max(a,b);
 			mn=library1.min(a,b);
 		}
+		ret = b;
 		ret = a;
+		c = a;
 	}
 
 	function cenas() {

@@ -19,7 +19,7 @@ public class Function {
 	
 	public Function(String name, String returnName, String returnType){
 		this.name=name;
-		ret=new Declaration(returnName,returnType);
+		ret=new Declaration(returnName,returnType,false);
 		declared=false;
 		parameters = new LinkedHashMap<String, Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
@@ -56,7 +56,10 @@ public class Function {
 	}
 	
 	public boolean addParameter(String name, String type){
-		parameters.put(name, new Declaration(name,type));
+		Declaration param = new Declaration(name);
+		System.out.println("Param Type: "+type);
+		param.init(type);
+		parameters.put(name, param);
 		return true;
 	}
 }

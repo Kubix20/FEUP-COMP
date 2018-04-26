@@ -15,22 +15,56 @@ public class SymbolTable{
 		this.errors = new ArrayList<String>();
 	}
 	
-	public static boolean isInt(String i)
-	{
+	public static boolean isInt(String i){
 		return i.matches("^\\d+");
 	}
 	
 	private Declaration lookupVariable(String name){
 		Declaration var = null;
 		
-		if (currFunction.ret.name.compareTo(name)==0) 
-			var = currFunction.ret;
+		if(currFunction != null){
+			if (currFunction.localDeclarations.containsKey(name)){
+				var = currFunction.localDeclarations.get(name);
+				return var;
+			}
+			
+			if (currFunction.parameters.containsKey(name)){
+				var = currFunction.parameters.get(name);
+				return var;
+			}
+			
+			if (currFunction.ret.name.compareTo(name)==0) {
+				var = currFunction.ret;
+				return var;
+			}
 		
-		if (currFunction.localDeclarations.containsKey(name))
-			var = currFunction.localDeclarations.get(name);
+		}
 		
-		if (currFunction.parameters.containsKey(name))
-			var = currFunction.parameters.get(name);
+		if (globalDeclarations.containsKey(name))
+			var = globalDeclarations.get(name);
+		
+		return var;
+	}
+	
+	private Declaration lookupVariableAssign(String name){
+		Declaration var = null;
+		
+		if(currFunction != null){
+			if (currFunction.localDeclarations.containsKey(name)){
+				var = currFunction.localDeclarations.get(name);
+				return var;
+			}
+			
+			if (currFunction.ret.name.compareTo(name)==0){
+				var = currFunction.ret;
+				return var;
+			}
+		
+			if (currFunction.parameters.containsKey(name)){
+				var = currFunction.parameters.get(name);
+				return var;
+			}
+		}
 		
 		if (globalDeclarations.containsKey(name))
 			var = globalDeclarations.get(name);
@@ -39,7 +73,13 @@ public class SymbolTable{
 	}
 	
 	public void stAssign(SimpleNode node){
+		int line = node.getLine();
 		Declaration lhs = stAccessAssign((SimpleNode) node.jjtGetChild(0));
+		
+		if(lhs == null)
+			return;
+		
+		String lhsAccess = lhs.access;
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
@@ -49,27 +89,41 @@ public class SymbolTable{
 			System.out.println("Term");
 			String rhsType;
 			String type1 = stTerm(child);
-			System.out.println("Type1: "+type1);
+			//System.out.println("Type1: "+type1);
 			rhsType = type1;
 			String type2 = "";
 			if(children == 2){
 				System.out.println("2nd Term");
 				type2 = stTerm((SimpleNode) rhs.jjtGetChild(1));
-				System.out.println("Type2: "+type2);
+				//System.out.println("Type2: "+type2);
 				
-				if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
-					logError(1,"Incompatible types for arithmetic expression");
+				if(type2.compareTo("undefined") != 0){
+					if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
+						logError(line,"Incompatible types for arithmetic expression: "+type1+" and "+type2);
+						return;
+					}
 				}
+				else
+					return;
 			}
 			
-			if(lhs.type.compareTo(rhsType) == 0){
-				lhs.init = true;
+			
+			//if type is undefined, initialize according to the rhs type
+			if(lhs.isUndefined()){
+				lhs.init(rhsType);
 			}
 			else{
-				if(lhs.type.compareTo("undefined") == 0)
-					lhs.init(rhsType);
-				else
-					logError(1,"Incompatible types "+lhs.name);
+				
+				if(rhsType.compareTo("undefined") != 0){
+					if(lhsAccess.compareTo("integer") == 0){
+						if(lhsAccess.compareTo(rhsType) != 0){
+							logError(line,"Incompatible types: "+lhsAccess+" and "+rhsType);
+							return;
+						}
+					}
+					
+					lhs.init = true;
+				}
 			}
 		}
 		else
@@ -77,30 +131,29 @@ public class SymbolTable{
 		if(	child.getId() == YalTreeConstants.JJTARRAYSIZE ){
 			System.out.println("ArraySize");
 			
-			if(lhs.isArray()){
-				lhs.init = true;
+			if(!stArraySize(child))
+				return;
+			
+			
+			//if type is undefined, initialize as array
+			if(lhs.isUndefined()){
+				lhs.initArray();
 			}
 			else{
-				if(lhs.type.compareTo("undefined") == 0)
-					lhs.initArray();
+				
+				//check if the access is of array type
+				if(lhsAccess.compareTo("array") == 0)
+					lhs.init = true;
 				else
-					logError(1,"Incompatible types "+lhs.name);
+					logError(line,"Incompatible types: "+lhsAccess+" and array");
 			}
-			
-			/*
-			if(lhs.init){
-				if(!lhs.isArray())
-					logError(1,"Imcopatible types");
-			}
-			else
-				lhs.initArray();
-			*/
 		}
 	}
 	
 	public Declaration stCall(SimpleNode node){
+		int line = node.getLine();
 		String name = node.getValue();
-		System.out.println("Call name: "+name);
+		//System.out.println("Call name: "+name);
 		String moduleName = "";
 		String functionName = "";
 		int dotIndex;
@@ -130,7 +183,7 @@ public class SymbolTable{
 				}
 				
 				if(argNr != expectedArgNr)
-					logError(1,"Wrong number of arguments for function "+function.name+", expected "+expectedArgNr+" and got "+argNr);
+					logError(line,"Wrong number of arguments for function "+function.name+", expected "+expectedArgNr+" and got "+argNr);
 				
 				if(node.jjtGetNumChildren() > 0){
 					
@@ -148,15 +201,15 @@ public class SymbolTable{
 							Declaration var = lookupVariable(paramName);
 							if(var != null){
 									
-								if(!var.init){
-									logError(1,"Argument nr "+currParam+", "+paramName+" might not have been initialized");
+								if(!var.isInitialized()){
+									logError(line,"Argument nr "+currParam+", "+paramName+" might not have been initialized");
 									//break;
 								}
 									
 								paramType = var.type;
 							}
 							else{
-								logError(1,"Argument nr "+currParam+", "+paramName+" not declared");
+								logError(line,"Argument nr "+currParam+", "+paramName+" not found");
 								//break;
 							}
 									
@@ -164,7 +217,7 @@ public class SymbolTable{
 							
 						String expectedType = function.parameters.get(paramKey).type;
 						if(expectedType.compareTo(paramType) != 0){
-							logError(1,"Non matching argument types for argument "+currParam+", expected "+expectedType+" and got "+paramType);
+							logError(line,"Non matching argument types for argument "+currParam+", expected "+expectedType+" and got "+paramType);
 							//break;
 						}
 							
@@ -176,7 +229,7 @@ public class SymbolTable{
 				
 			}
 			else
-				logError(1,"Call to undefined function "+functionName);
+				logError(line,"Call to undefined function "+functionName);
 				
 			
 		}
@@ -185,7 +238,8 @@ public class SymbolTable{
 	}
 	
 	public String stTerm(SimpleNode node){
-		//System.out.println("Term value: "+node.getValue());
+		int line = node.getLine();
+		
 		String parts = node.getValue();
 		String op = "";
 		String value = "";
@@ -209,12 +263,18 @@ public class SymbolTable{
 				var = stAccess(child);
 				
 				if(var != null){
+					
+					if(!var.isInitialized()){
+						logError(line,"Variable "+var.name+" might not have been initialized");
+						return "undefined";
+					}
+					
 					if(op != "" && var.isArray()){
-						logError(1,"Illegal use of operator on array type");
-						return "void";
+						logError(line,"Illegal use of operator on array type");
+						return "undefined";
 					}
 				
-					return var.type;
+					return var.access;
 				}
 			}
 			
@@ -223,79 +283,107 @@ public class SymbolTable{
 				
 				if(var != null){
 					if(op != "" && var.isArray()){
-						logError(1,"Illegal use of operator on array type");
-						return "void";
+						logError(line,"Illegal use of operator on array type");
+						return "undefined";
 					}
 				
 					return var.type;
 				}
+				else
+					return "integer";
 			}
 		}
 		else
 			return "integer";
 		
-		return "void";
+		return "undefined";
+	}	
+	
+	public boolean stArraySize(SimpleNode node){
+		if(node.jjtGetNumChildren() > 0){
+			Declaration access = stAccess((SimpleNode) node.jjtGetChild(0));
+					
+			if(access == null)
+				return false;
+			else if(access.undefinedAccess())
+				return false;
+		}
+		
+		return true;
 	}
 	
 	public Declaration stAccessAssign(SimpleNode node){
+		int line = node.getLine();
 		String name = node.getValue();
 		
 		if(name.indexOf(".")!=-1) {
-			logError(1,"Invalid access to size of variable "+name);
+			logError(line,"Invalid access to size of variable "+name);
 			return null;
 		}
 		
 		//System.out.println("Assign Access name: "+name);
 		
-		Declaration var = lookupVariable(name);
+		Declaration var = lookupVariableAssign(name);
 		
 		if(var == null){
 			var = new Declaration(name);
 			currFunction.localDeclarations.put(name, var);
 		}
 		
+		var.access = "undefined";
+		
 		if(node.jjtGetNumChildren() == 1) {
 			
 			String indexName = ((SimpleNode) node.jjtGetChild(0)).getValue();
 			//System.out.println("Index: "+indexName);
 			
 			if(var.isArray()){
-				if(!var.init){
+				if(var.isInitialized()){
 					if(!isInt(indexName)){
 				
 						Declaration index = lookupVariable(indexName);
-						if(var != null){
-							if(!var.init)
-								logError(1,"Index "+indexName+" access of variable "+name+" not initialized");
+						if(index != null){
+							if(index.isInitialized())
+								var.access = "integer";
+							else
+								logError(line,"Index "+indexName+" access of variable "+name+" might not have been initialized");
 						}
 						else
-							logError(1,"Index "+indexName+" access of variable "+name+" not declared");
-					}
+							logError(line,"Index "+indexName+" access of variable "+name+" not found");				}
+					else
+						var.access = "integer";
 				}
 				else
-					logError(1,"Invalid index access of variable "+name+" not initialized");
+					logError(line,"Invalid index access of variable "+name+" not initialized");
 			}
 			else
-				logError(1,"Invalid index access of variable "+name+" not of array type");
+				logError(line,"Invalid index access of variable "+name+" not of array type");
 		}
+		else
+			var.access = var.type;
 		
 		return var;
 	}
 	
 	public Declaration stAccess(SimpleNode node){
+		int line = node.getLine();
 		String name = node.getValue();
 		
+		boolean sizeAccess = false;
 		if(name.indexOf(".")!=-1) {
 			name = name.substring(0, name.indexOf("."));
+			sizeAccess = true;
 		}
 		
 		//System.out.println("Access name: "+name);
 		
 		Declaration var = lookupVariable(name);
 		if(var == null){
-			logError(1,"Variable "+name+" not declared");
+			logError(line,"Variable "+name+" not found");
 			return null;
 		}
+		
+		var.access = "undefined";
 		
 		if(node.jjtGetNumChildren() == 1) {
 			
@@ -303,50 +391,87 @@ public class SymbolTable{
 			//System.out.println("Index: "+indexName);
 			
 			if(var.isArray()){
-				if(!var.init){
+				if(var.isInitialized()){
 					if(!isInt(indexName)){
 				
 						Declaration index = lookupVariable(indexName);
-						if(var != null){
-							if(!var.init)
-								logError(1,"Index "+indexName+" access of variable "+name+" not initialized");
+						if(index != null){
+							if(index.isInitialized())
+								var.access = "integer";
+							else
+								logError(line,"Index "+indexName+" access of variable "+name+" might not have been initialized");
 						}
 						else
-							logError(1,"Index "+indexName+" access of variable "+indexName+" not declared");
+							logError(line,"Index "+indexName+" access of variable "+indexName+" not found");
 					}
+					else
+						var.access = "integer";
 				}
 				else
-					logError(1,"Invalid index access of variable "+name+" not initialized");
+					logError(line,"Invalid index access of variable "+name+" not initialized");
 			}
 			else
-				logError(1,"Invalid index access of variable "+name+" not of array type");
+				logError(line,"Invalid index access of variable "+name+" not of array type");
+		}
+		else {
+			
+			if(sizeAccess){
+				
+				if(var.isArray()){
+					if(var.isInitialized()){
+						var.access = "integer";
+					}
+					else
+						logError(line,"invalid size access of variable "+var.name+" not initialized");
+				}
+				else
+					logError(line,"Invalid size access of variable "+var.name);
+			}
+			else
+				var.access = var.type;
 		}
 		
 		return var;
 	}
 	
 	public void stExprtest(SimpleNode node){
-		int children = node.jjtGetNumChildren();
-	
-		stAccess((SimpleNode) node.jjtGetChild(0));
-	
-		SimpleNode child = (SimpleNode) node.jjtGetChild(1);
+		int line = node.getLine();
+		Declaration lhs = stAccess((SimpleNode) node.jjtGetChild(0));
+		
+		if(lhs == null)
+			return;
+		
+		String lhsType = lhs.access;
+		
+		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
+		int children = rhs.jjtGetNumChildren();
+		SimpleNode child = (SimpleNode) rhs.jjtGetChild(0);
 		
 		if( child.getId() == YalTreeConstants.JJTTERM ){
 			System.out.println("Term");
+			String rhsType;
 			String type1 = stTerm(child);
-			/*
-			String type2;
-			*/
-			if(children == 3){
-				//type2 = stTerm((SimpleNode) node.jjtGetChild(2));
+			//System.out.println("Type1: "+type1);
+			rhsType = type1;
+			String type2 = "";
+			if(children == 2){
 				System.out.println("2nd Term");
+				type2 = stTerm((SimpleNode) rhs.jjtGetChild(1));
+				//System.out.println("Type2: "+type2);
+				
+				if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
+					logError(line,"Incompatible types for arithmetic expression: "+type1+" and "+type2);
+					return;
+				}
 			}
+			
+			if(lhsType.compareTo("integer") != 0 || rhsType.compareTo("integer") != 0)
+				logError(line,"Incomparable types "+lhsType+" and "+rhsType);
 		}
 		else
 		
 		if(	child.getId() == YalTreeConstants.JJTARRAYSIZE ){
-			logError(1,"Unable to compare to array size declaration");
+			logError(line,"Unable to compare to array size declaration");
 		}
 	}
 	
@@ -388,21 +513,23 @@ public class SymbolTable{
 			functionName = functionName.substring(functionName.indexOf(".")+1);
 		}
 		
+		if(!functions.containsKey(functionName))
+			return;
+		
 		currFunction = functions.get(functionName);
 		
 		stStmtlst(node);
 		
-		/*
-		if (functions.get(nomefuncao).ret.type.compareTo("undefined")==0) {
-			System.out.println("Aviso na linha " + node.line + 
-			": Retorno nao e definido no corpo da funcao");
+		if(currFunction.ret.type.compareTo("void") != 0) {
+			if(!currFunction.ret.isInitialized())
+				logError("Return "+currFunction.ret.name+" might not have been initialized on function "+currFunction.name);
 		}
-		*/
 	}
 	
 	public void stFunction(SimpleNode node){
+		int line = node.getLine();
 		String functionName = node.getValue();
-		System.out.println("Function Name: "+functionName);
+		//System.out.println("Function Name: "+functionName);
 		String returnName="";
 		String returnType="void";
 		String comp=null;
@@ -410,11 +537,11 @@ public class SymbolTable{
 		
 		if (functionName.indexOf(".")!=-1) {
 			functionName = functionName.substring(functionName.indexOf(".")+1);
-			logWarning(1,"Function name contains '.' ." +"Name changed to "+functionName);
+			logWarning(line,"Function name contains '.' ." +"Name changed to "+functionName);
 		}
 		
 		if (functions.containsKey(functionName)) {
-			logError(1,"Function "+functionName+"already declared");
+			logError(line,"Function "+functionName+"already declared");
 			return;
 		}
 		
@@ -430,7 +557,7 @@ public class SymbolTable{
 			}
 			returnName=comp;
 			currChild++;
-			System.out.println("Retorno: " + returnName + " "+ returnType);
+			//System.out.println("Retorno: " + returnName + " "+ returnType);
 		}
 		
 		Function function = new Function(functionName, returnName, returnType);
@@ -449,19 +576,10 @@ public class SymbolTable{
 				
 				//testa se nao e repetido
 				if ( (!function.parameters.containsKey(paramName)) ){
-					
-					if (comp!=null) { 
-						if (paramName.compareTo(comp)==0) {
-							logError(1,"Argument name may cannot be equal to the return");
-							return;
-						}
-					}
 					function.addParameter(paramName,paramType);
 				} 
-				else {
-					logError(1,"Repeated Argument");
-					return;
-				}				
+				else
+					logError(line,"Repeated argument "+paramName+" on function "+functionName);
 			}
 			currChild++;
 		}
@@ -471,18 +589,67 @@ public class SymbolTable{
 	}
 	
 	public void stDeclaration(SimpleNode node){
-		int nchildren = node.jjtGetNumChildren();
+		int line = node.getLine();
 		
-		SimpleNode lhs = (SimpleNode) node.jjtGetChild(0);
-		String lhsName = lhs.getValue();
+		int children = node.jjtGetNumChildren();
+		
+		boolean newVar = false;
+		String lhsName = ((SimpleNode) node.jjtGetChild(0)).getValue();
 		String lhsType = "integer";
 		if(lhsName.indexOf("[]")!=-1) {
 			lhsType = "array";
 			lhsName = lhsName.substring(0, lhsName.indexOf("["));
 		}
 		
-		if(!globalDeclarations.containsKey(lhsName)){
-			globalDeclarations.put(lhsName, new Declaration(lhsName,lhsType));
+		Declaration lhs = globalDeclarations.get(lhsName);
+		
+		if(lhs == null){
+			lhs = new Declaration(lhsName,lhsType,true);
+			globalDeclarations.put(lhsName, lhs);
+			newVar = true;
+		}
+		
+		if(lhsType.compareTo("array") == 0 && lhs.isInt()) {
+			logError(line,"Invalid access of variable "+lhs.name+" of type integer");
+		}
+		
+		if(children > 1){
+			
+			String rhsType = "undefined"; 
+			SimpleNode child = (SimpleNode) node.jjtGetChild(1);
+			if(child.getId() == YalTreeConstants.JJTARRAYSIZE){
+				System.out.println("ArraySize");
+				
+				if(!stArraySize(child))
+					return;
+				
+				rhsType = "array";
+			}
+			
+			if(child.getId() == YalTreeConstants.JJTINTELEMENT){
+				System.out.println("IntElement");
+				rhsType = "integer";
+			}
+			
+			if(newVar){
+				//System.out.println("Type: "+rhsType);
+				if(lhs.isArray()){
+					if(rhsType.compareTo("integer") == 0)
+						logError(line,"Illegal array "+lhs.name+" declaration");
+				}
+				else
+					lhs.init(rhsType);
+			}
+			else {
+				if(lhs.isInt()){
+					if(rhsType.compareTo("array") == 0)
+						logError(line,"Incompatible types: "+lhs.type+" and "+rhsType);
+				}
+			}
+		}
+		else{
+			if(!newVar)
+				logError(line,"Variable "+lhs.name+" already declared");
 		}
 	}
 	
@@ -507,7 +674,6 @@ public class SymbolTable{
 		}
 	}
 	
-
 	private void analyseFunctions(SimpleNode root){
 		SimpleNode node;
 		for(int i=0; i< root.jjtGetNumChildren(); i++)
@@ -556,20 +722,22 @@ public class SymbolTable{
 		System.out.println(content);
 	}
 	
-	public boolean printErrors(){
-		if(errors.size() == 0)
-			return false;
-		
+	public int printErrors(){
 		String newLine = System.lineSeparator();
 		for(String error : errors)
 			System.out.println(error+newLine);
 		
-		return true;
+		return errors.size();
 	}
 	
 	private void logWarning(int line, String msg){
 		System.out.println("Warning on line " +line+": "+msg);
 		errors.add("Warning on line " +line+": "+msg);
+	}
+	
+	private void logError(String msg){
+		System.out.println("Error: "+msg);
+		errors.add("Error: "+msg);
 	}
 	
 	private void logError(int line, String msg){
