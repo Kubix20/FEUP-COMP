@@ -8,6 +8,7 @@ public class Function {
 	public boolean declared;
 	public LinkedHashMap<String, Declaration> parameters;
 	public HashMap<String, Declaration> localDeclarations;
+	public ArrayList<ArrayList<Declaration>> ifScopeDeclarations;
 	public Declaration ret;
 	
 	public Function(){
@@ -15,6 +16,7 @@ public class Function {
 		declared=false;
 		parameters = new LinkedHashMap<String, Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
+		ifScopeDeclarations = new ArrayList<ArrayList<Declaration>>();
 	};
 	
 	public Function(String name, String returnName, String returnType){
@@ -23,6 +25,7 @@ public class Function {
 		declared=false;
 		parameters = new LinkedHashMap<String, Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
+		ifScopeDeclarations = new ArrayList<ArrayList<Declaration>>();
 	};
 
 	public String toString(){
@@ -61,5 +64,61 @@ public class Function {
 		param.init(type);
 		parameters.put(name, param);
 		return true;
+	}
+	
+	public ArrayList<Declaration> getCurrIfScope(){
+		int curr = ifScopeDeclarations.size()-1;
+		return ifScopeDeclarations.get(curr);
+	}
+	
+	public void deleteCurrIfScopeDeclarations(){
+		int size = ifScopeDeclarations.size();
+		ArrayList<Declaration> currScope = ifScopeDeclarations.get(size-1);
+		
+		for(Declaration var : currScope)
+			localDeclarations.remove(var.name);
+		
+		currScope.clear();
+	}
+	
+	public void clearCurrIfScope(){
+		
+		int size = ifScopeDeclarations.size();
+		
+		if(size == 0)
+			return;
+		
+		ArrayList<Declaration> currScope = ifScopeDeclarations.get(size-1);
+		
+		for(Declaration var : currScope){
+			
+			System.out.println("Cleared: "+var.name);
+			
+			if(var.ifStatus.compareTo("") == 0)
+				var.ifStatus = "partial";
+			
+			for(int i = 0; i < size-1;i++){
+				ifScopeDeclarations.get(i).add(var);
+			}
+		}
+		
+		currScope.clear();
+	}
+	
+	public void addHigherIfScopeDeclaration(Declaration var){
+		int size = ifScopeDeclarations.size();
+		
+		for(int i = 0; i < size-1;i++){
+			ifScopeDeclarations.get(i).add(var);
+		}
+	}
+	
+	public void addIfScopeDeclaration(Declaration var){
+		
+		int size = ifScopeDeclarations.size();
+		
+		if(size > 0){
+			ifScopeDeclarations.get(size-1).add(var);
+		}
 	}
 }

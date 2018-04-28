@@ -4,6 +4,7 @@ public class Declaration {
 	public String name;
 	public String type;
 	public String access;
+	public String ifStatus = "";
 	public boolean global;
 	public boolean init;
 	public int value;
@@ -30,6 +31,17 @@ public class Declaration {
 		init = false;
 		this.global = global;
 		local = -1;
+	}
+	
+	
+	public Declaration(Declaration var){
+		name = var.name;
+		type = var.type;
+		access = var.access;
+		ifStatus = var.ifStatus;
+		global = var.global;
+		init = var.init;
+		local = var.value;
 	}
 	
 	public void init(String type){
@@ -104,6 +116,18 @@ public class Declaration {
 	
 	public boolean undefinedAccess(){
 		return access.compareTo("undefined") == 0;
+	}
+	
+	public boolean partialIfStatus(){
+		return ifStatus.compareTo("partial") == 0;
+	}
+	
+	public boolean incompatibleIfStatus(){
+		return ifStatus.compareTo("incompatible") == 0;
+	}
+	
+	public boolean completeIfStatus(){
+		return ifStatus.compareTo("complete") == 0;
 	}
 	
 	public String toString(){

@@ -73,6 +73,8 @@ public class SymbolTable{
 	}
 	
 	public void stAssign(SimpleNode node){
+		
+		//System.out.println("Stack state: "+currFunction.ifScopeDeclarations.empty());
 		int line = node.getLine();
 		Declaration lhs = stAccessAssign((SimpleNode) node.jjtGetChild(0));
 		
@@ -328,9 +330,20 @@ public class SymbolTable{
 		if(var == null){
 			var = new Declaration(name);
 			currFunction.localDeclarations.put(name, var);
+			currFunction.addIfScopeDeclaration(var);
 		}
 		
 		var.access = "undefined";
+		
+		if(var.partialIfStatus()){
+			logError(line,"Variable "+var.name+" may reach this position uninitialized");
+			return var;
+		}
+		
+		if(var.incompatibleIfStatus()){
+			logError(line,"Variable "+var.name+" may reach this position as an integer or as an array");
+			return var;
+		}
 		
 		if(node.jjtGetNumChildren() == 1) {
 			
@@ -384,6 +397,16 @@ public class SymbolTable{
 		}
 		
 		var.access = "undefined";
+		
+		if(var.partialIfStatus()){
+			logError(line,"Variable "+var.name+" may reach this position uninitialized");
+			return var;
+		}
+		
+		if(var.incompatibleIfStatus()){
+			logError(line,"Variable "+var.name+" may reach this position as an integer or as an array");
+			return var;
+		}
 		
 		if(node.jjtGetNumChildren() == 1) {
 			
@@ -475,6 +498,78 @@ public class SymbolTable{
 		}
 	}
 	
+	public void stIf(SimpleNode node){
+		currFunction.ifScopeDeclarations.add(new ArrayList<Declaration>());
+		int children = node.jjtGetNumChildren();
+				
+		stExprtest((SimpleNode) node.jjtGetChild(0));
+		stStmtlst((SimpleNode) node.jjtGetChild(1));
+				
+		//else clause
+		if(children > 2){
+					
+			ArrayList<Declaration> currScope = currFunction.getCurrIfScope();
+			ArrayList<Declaration> ifScope = new ArrayList<Declaration>();
+			System.out.println("ifScope size: "+currScope.size());
+					
+			for(Declaration var : currScope){
+				ifScope.add(new Declaration(var));
+			}
+			currFunction.deleteCurrIfScopeDeclarations();
+					
+			stStmtlst((SimpleNode) node.jjtGetChild(2));
+			ArrayList<Declaration> elseScope = currFunction.getCurrIfScope();
+			System.out.println("elseScope size: "+elseScope.size());
+					
+			for(Declaration ifVar : ifScope){
+				System.out.println("IfScope: "+ifVar.name+" ifStatus: "+ifVar.ifStatus);
+				boolean found = false;
+						
+				int j = 0;
+				for(Declaration elseVar: elseScope){
+					System.out.println("ElseScope: "+elseVar.name+" ifStatus: "+elseVar.ifStatus);
+					if(ifVar.name.compareTo(elseVar.name) == 0){
+						found = true;
+								
+						if(ifVar.incompatibleIfStatus() || elseVar.incompatibleIfStatus()){
+							elseVar.ifStatus = "incompatible";
+						}
+						else{
+							if(ifVar.type.compareTo(elseVar.type) == 0)
+								elseVar.ifStatus = "complete";
+							else
+								elseVar.ifStatus = "incompatible";
+							}
+								
+								
+							currFunction.addHigherIfScopeDeclaration(elseVar);
+							elseScope.remove(j);
+								
+							break;
+					}
+							
+					j++;
+							
+				}
+						
+				if(!found){
+					//if(ifVar.ifStatus.compareTo("") == 0 || ifVar.ifStatus.compareTo("complete") == 0)
+					if(ifVar.ifStatus.compareTo("") == 0);
+						ifVar.ifStatus = "partial";
+					currFunction.addHigherIfScopeDeclaration(ifVar);
+					currFunction.localDeclarations.put(ifVar.name,ifVar);
+				}
+			}
+					
+		currFunction.clearCurrIfScope();
+			}
+			else{
+				currFunction.clearCurrIfScope();
+			}
+				
+		currFunction.ifScopeDeclarations.remove(currFunction.ifScopeDeclarations.size()-1);
+	}
+	
 	public void stStmtlst(SimpleNode node){
 		SimpleNode child;
 		for(int i = 0; i < node.jjtGetNumChildren();i++){
@@ -483,13 +578,12 @@ public class SymbolTable{
 			if(child.getId() == YalTreeConstants.JJTWHILE ){
 				System.out.println("While");
 				stExprtest((SimpleNode) child.jjtGetChild(0));
-				stStmtlst(child);
+				stStmtlst((SimpleNode) child.jjtGetChild(1));
 			}
 			
 			if(child.getId() == YalTreeConstants.JJTIF ){
 				System.out.println("If");
-				stExprtest((SimpleNode) child.jjtGetChild(0));
-				stStmtlst(child);
+				stIf(child);
 			}
 			
 			if(child.getId() == YalTreeConstants.JJTASSIGN ){
@@ -506,8 +600,8 @@ public class SymbolTable{
 	
 	public void stFunctionBody(SimpleNode node){
 		String functionName = node.getValue();
-		int currChild=0; //proximo filho
-	
+		int children = node.jjtGetNumChildren();
+		
 		//testa se o nome da funcao tem ponto
 		if (functionName.indexOf(".")!=-1) {
 			functionName = functionName.substring(functionName.indexOf(".")+1);
@@ -518,7 +612,16 @@ public class SymbolTable{
 		
 		currFunction = functions.get(functionName);
 		
-		stStmtlst(node);
+		SimpleNode child;
+		for(int i = 0; i < children;i++){
+			child = (SimpleNode) node.jjtGetChild(i);
+			
+			if(child.getId() == YalTreeConstants.JJTSTMTLST){
+				System.out.println("Stmtlst");
+				stStmtlst(child);
+				break;
+			}
+		}
 		
 		if(currFunction.ret.type.compareTo("void") != 0) {
 			if(!currFunction.ret.isInitialized())
@@ -686,7 +789,6 @@ public class SymbolTable{
 				stFunctionBody(node);
 			}
 		}
-		
 	}
 	
 	public void analyse(SimpleNode root){

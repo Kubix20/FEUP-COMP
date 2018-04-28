@@ -5,7 +5,7 @@ javac *.java
 java Yal Programs/array1.yal
 java Yal Programs/array2.yal
 java Yal Programs/aval1.yal
-java Yal Programs/aval2_.yal
+java Yal Programs/aval2.yal
 java Yal Programs/aval3.yal
 java Yal Programs/aval4.yal
 java Yal Programs/aval5.yal
@@ -20,3 +20,4 @@ java Yal Programs/programa1.yal
 java Yal Programs/programa2.yal
 java Yal Programs/programa3.yal
 java Yal Programs/sqrt.yal
+java Yal Programs/if_test.yal

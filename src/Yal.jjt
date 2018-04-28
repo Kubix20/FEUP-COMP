@@ -203,7 +203,7 @@ void CmpStmtLst() : {}
    <LCHAVETA> Stmtlst() <RCHAVETA>
 }   
 
-void Stmtlst() : {}
+void Stmtlst() #Stmtlst : {}
 {
   (Stmt())*
 }

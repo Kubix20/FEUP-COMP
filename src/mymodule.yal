@@ -26,11 +26,23 @@ module mymodule {
 		f1(var,b);
 		io.print("Hello World");
 		if(M>a){
+			if(M==a){
+				z = 1;
+			}
+			else{
+				z = 2;
+			}
+			z = 3;
 			y = M+2;
+			y = y+1;
 		}
 		else{
-			y = M+3;
+			y = [2];
+			y = 2;
+			z = [2];
 		}
+		g = z+1;
+		y = 3;
 		while(i<M) {
 			a=d[0];
 			i[0]=+i+1;
