@@ -8,12 +8,26 @@ options {
 }
 
 PARSER_BEGIN(Yal)
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
+
 public class Yal {
   public static int nErrors = 0;
   public static final int ERROR_LIMIT = 5;
   public static void main(String args[]) throws ParseException, FileNotFoundException {
+	  
+	if(args.length != 1){
+		System.out.println("Wrong amount of arguments");
+		return;
+	}
+	
+	File inputFile = new File(args[0]);
+	if(!inputFile.exists() || !inputFile.isFile()){
+		System.out.println("Unable to find source file: "+inputFile);
+		return;
+	}
+	
 	String newline = System.lineSeparator();
 	System.out.println(newline+newline+
 					   "<<<<<<<< Parsing file "+ args[0]+ " >>>>>>>>>"+
@@ -27,16 +41,24 @@ public class Yal {
 		return;
 	}
 	
-	SymbolTable sy = new SymbolTable();
-	sy.analyse(root); //Semantic analysis
-	sy.print();
-	errors = sy.printErrors();
+	SymbolTable st = new SymbolTable();
+	st.analyse(root); //Semantic analysis
+	st.print();
+	errors = st.printErrors();
     if(errors > 0){
 		System.out.println("Program parsed with "+errors+" errors");
 		return;
 	}
 	
-	System.out.println("Program parsed successfully!");
+	CodeGenerator cg = new CodeGenerator(inputFile,root,st);
+	try{
+		cg.generate();
+	}
+	catch(Exception e){
+		return;
+	}
+	
+	System.out.println("Program compiled successfully!");
   }
 }
 PARSER_END(Yal)

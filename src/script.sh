@@ -2,4 +2,4 @@
 jjtree Yal.jjt
 javacc Yal.jj
 javac *.java
-java Yal mymodule.yal
+java Yal mymodule2.yal

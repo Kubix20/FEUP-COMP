@@ -3,11 +3,11 @@ import java.util.ArrayList;
 
 public class SymbolTable{
 	
-	private String module;
-	private HashMap<String,Function> functions;
-	private Function currFunction;
-	private HashMap<String,Declaration> globalDeclarations;
-	private ArrayList<String> errors;
+	public String module;
+	public HashMap<String,Function> functions;
+	public Function currFunction;
+	public HashMap<String,Declaration> globalDeclarations;
+	public ArrayList<String> errors;
 	
 	public SymbolTable(){
 		this.functions = new HashMap<String,Function>();
@@ -445,7 +445,7 @@ public class SymbolTable{
 						var.access = "integer";
 					}
 					else
-						logError(line,"invalid size access of variable "+var.name+" not initialized");
+						logError(line,"Invalid size access of variable "+var.name+" not initialized");
 				}
 				else
 					logError(line,"Invalid size access of variable "+var.name);

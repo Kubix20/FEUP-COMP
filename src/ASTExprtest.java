@@ -17,6 +17,9 @@ class ASTExprtest extends SimpleNode {
   }
 
   @Override
+  public String getValue(){ return this.operator; }
+  
+  @Override
   public String toString() { return YalTreeConstants.jjtNodeName[id] + " " + this.operator; }
 
 }

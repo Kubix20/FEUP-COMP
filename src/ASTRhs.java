@@ -21,6 +21,9 @@ class ASTRhs extends SimpleNode {
   }
   
   @Override
+  public String getValue(){ return this.operator; }
+  
+  @Override
   public boolean print() { return this.print; }
 
   @Override

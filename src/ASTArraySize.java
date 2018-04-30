@@ -16,6 +16,9 @@ class ASTArraySize extends SimpleNode {
   public void setValues(String value){
 	this.value = value;
   }
+  
+  @Override
+  public String getValue(){ return this.value; }
 
   @Override
   public String toString() { 
