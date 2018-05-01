@@ -18,6 +18,7 @@ module mymodule {
 		b = h;
 		h = 3;
 		h = b.size;
+		mymodule.cenas();
 		i = N+a;
 		M = 3;
 		if(a > b.size){

@@ -160,8 +160,8 @@ public class SymbolTable{
 		String functionName = "";
 		int dotIndex;
 		if((dotIndex = name.indexOf("."))!=-1){
-			moduleName = name.substring(0,dotIndex-1);
-			functionName = name.substring(dotIndex+1,name.length()-1);
+			moduleName = name.substring(0,dotIndex);
+			functionName = name.substring(dotIndex+1);
 		}
 		else
 			functionName = name;
@@ -169,7 +169,7 @@ public class SymbolTable{
 		Function function = functions.get(functionName);
 		Declaration ret = null;
 		
-		if(moduleName == ""){
+		if(moduleName == "" || moduleName.compareTo(module)==0){
 			
 			if(function != null){
 				
@@ -177,54 +177,54 @@ public class SymbolTable{
 				int argNr = 0;
 				int expectedArgNr =  function.parameters.size();
 				
-				if(node.jjtGetNumChildren() > 0){
-					//System.out.println("Params");
-					//System.out.println(((SimpleNode) node.jjtGetChild(0)).getId());
+				if(node.jjtGetNumChildren() > 0)
 					argNr = ((SimpleNode) node.jjtGetChild(0)).jjtGetNumChildren();
-					//System.out.println(argNr);	
-				}
 				
-				if(argNr != expectedArgNr)
+				if(argNr != expectedArgNr){
 					logError(line,"Wrong number of arguments for function "+function.name+", expected "+expectedArgNr+" and got "+argNr);
-				
-				if(node.jjtGetNumChildren() > 0){
+				}
+				else{
 					
-					int currParam = 0;
-					SimpleNode argList = (SimpleNode) node.jjtGetChild(0);
-					
-					SimpleNode param;
-					for (String paramKey: function.parameters.keySet()){
-							
-						param = (SimpleNode) argList.jjtGetChild(currParam);
-						String paramName = param.getValue();
-						String paramType = "integer";
-							
-						if(!isInt(paramName)){
-							Declaration var = lookupVariable(paramName);
-							if(var != null){
-									
-								if(!var.isInitialized()){
-									logError(line,"Argument nr "+currParam+", "+paramName+" might not have been initialized");
+					if(node.jjtGetNumChildren() > 0){
+						
+						int currParam = 0;
+						SimpleNode argList = (SimpleNode) node.jjtGetChild(0);
+						
+						SimpleNode param;
+						for (String paramKey: function.parameters.keySet()){
+								
+							param = (SimpleNode) argList.jjtGetChild(currParam);
+							String paramName = param.getValue();
+							String paramType = "integer";
+								
+							if(!isInt(paramName)){
+								Declaration var = lookupVariable(paramName);
+								if(var != null){
+										
+									if(!var.isInitialized()){
+										logError(line,"Argument nr "+currParam+", "+paramName+" might not have been initialized");
+										//break;
+									}
+										
+									paramType = var.type;
+								}
+								else{
+									logError(line,"Argument nr "+currParam+", "+paramName+" not found");
 									//break;
 								}
-									
-								paramType = var.type;
+										
 							}
-							else{
-								logError(line,"Argument nr "+currParam+", "+paramName+" not found");
+								
+							String expectedType = function.parameters.get(paramKey).type;
+							if(expectedType.compareTo(paramType) != 0){
+								logError(line,"Non matching argument types for argument "+currParam+", expected "+expectedType+" and got "+paramType);
 								//break;
 							}
-									
+								
+								currParam++;
 						}
-							
-						String expectedType = function.parameters.get(paramKey).type;
-						if(expectedType.compareTo(paramType) != 0){
-							logError(line,"Non matching argument types for argument "+currParam+", expected "+expectedType+" and got "+paramType);
-							//break;
-						}
-							
-							currParam++;
 					}
+					
 				}
 				
 				ret = function.ret;
@@ -243,6 +243,8 @@ public class SymbolTable{
 		int line = node.getLine();
 		
 		String parts = node.getValue();
+		
+		System.out.println("Parts: "+parts);
 		String op = "";
 		String value = "";
 		if(parts.charAt(0) == ' '){
@@ -252,10 +254,9 @@ public class SymbolTable{
 			op = ""+parts.charAt(0);
 			value = parts.substring(1,parts.length()).trim();
 		}
-		/*
+		
 		System.out.println("Term op: "+op);
 		System.out.println("Term value: "+value);
-		*/
 		
 		if(node.jjtGetNumChildren() == 1) {
 			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
@@ -271,7 +272,9 @@ public class SymbolTable{
 						return "undefined";
 					}
 					
-					if(op != "" && var.isArray()){
+					System.out.println("Term var name: "+var.name);
+					
+					if(var.isArray() && op.compareTo("")!=0 ){
 						logError(line,"Illegal use of operator on array type");
 						return "undefined";
 					}
@@ -284,7 +287,7 @@ public class SymbolTable{
 				var = stCall(child);
 				
 				if(var != null){
-					if(op != "" && var.isArray()){
+					if(var.isArray() && op.compareTo("")!=0){
 						logError(line,"Illegal use of operator on array type");
 						return "undefined";
 					}
@@ -632,7 +635,6 @@ public class SymbolTable{
 	public void stFunction(SimpleNode node){
 		int line = node.getLine();
 		String functionName = node.getValue();
-		//System.out.println("Function Name: "+functionName);
 		String returnName="";
 		String returnType="void";
 		String comp=null;
@@ -649,40 +651,53 @@ public class SymbolTable{
 		}
 		
 		if ( ((SimpleNode) node.jjtGetChild(currChild)).getId() == YalTreeConstants.JJTELEMENT ) {
-			returnType="integer";
 			
-			//para efeitos de comparacao retira-se apenas o nome da variavel
-			comp = ((SimpleNode) node.jjtGetChild(currChild)).getValue();
-			if(comp.indexOf("[]")!=-1)
-			{
-				comp = comp.substring(0, comp.indexOf("["));
-				returnType="array";
+			if(functionName.compareTo("main")==0){
+				logError(line,"Function main must return void");
 			}
-			returnName=comp;
+			else{
+				returnType="integer";
+				
+				//para efeitos de comparacao retira-se apenas o nome da variavel
+				comp = ((SimpleNode) node.jjtGetChild(currChild)).getValue();
+				if(comp.indexOf("[]")!=-1)
+				{
+					comp = comp.substring(0, comp.indexOf("["));
+					returnType="array";
+				}
+				returnName=comp;
+			}
 			currChild++;
-			//System.out.println("Retorno: " + returnName + " "+ returnType);
 		}
 		
 		Function function = new Function(functionName, returnName, returnType);
 		
 		//verifica se tem parametros
 		if ( ((SimpleNode) node.jjtGetChild(currChild)).getId() == YalTreeConstants.JJTVARLIST ) {
-			for (int i=0; i<node.jjtGetChild(currChild).jjtGetNumChildren();i++) {
-				String paramName = ((SimpleNode) node.jjtGetChild(currChild).jjtGetChild(i)).getValue();
-				String paramType="integer";
-
-				if(paramName.indexOf("[]")!=-1)
-				{
-					paramName = paramName.substring(0, paramName.indexOf("["));
-					paramType="array";
-				}
+			
+			if(functionName.compareTo("main")==0){
+				logError(line,"Function main cannot have any arguments");
+			}
+			else{
 				
-				//testa se nao e repetido
-				if ( (!function.parameters.containsKey(paramName)) ){
-					function.addParameter(paramName,paramType);
-				} 
-				else
-					logError(line,"Repeated argument "+paramName+" on function "+functionName);
+				//parse parameters
+				for (int i=0; i<node.jjtGetChild(currChild).jjtGetNumChildren();i++) {
+					String paramName = ((SimpleNode) node.jjtGetChild(currChild).jjtGetChild(i)).getValue();
+					String paramType="integer";
+
+					if(paramName.indexOf("[]")!=-1)
+					{
+						paramName = paramName.substring(0, paramName.indexOf("["));
+						paramType="array";
+					}
+					
+					//testa se nao e repetido
+					if ( (!function.parameters.containsKey(paramName)) ){
+						function.addParameter(paramName,paramType);
+					} 
+					else
+						logError(line,"Repeated argument "+paramName+" on function "+functionName);
+				}
 			}
 			currChild++;
 		}

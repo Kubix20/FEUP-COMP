@@ -306,7 +306,7 @@ void ArraySize() #ArraySize : {Token t1;}
 void Term() #Term : {Token t1=null, t2=null;}
 {
   [t2=<ADDSUB_OP>]
-  (t1=<INTEGER>{jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));} | LOOKAHEAD(3) Call() | Access())
+  (t1=<INTEGER> | LOOKAHEAD(3) Call() | Access()) {jjtThis.setValues((t1 == null ? "": t1.image), (t2 == null ? "": t2.image));}
 }
 
 void Exprtest() #Exprtest : {Token t1;}

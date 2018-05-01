@@ -11,8 +11,8 @@ public class Function {
 	public ArrayList<ArrayList<Declaration>> ifScopeDeclarations;
 	public Declaration ret;
 	
-	public Function(){
-		name="";
+	public Function(String name){
+		this.name=name;
 		declared=false;
 		parameters = new LinkedHashMap<String, Declaration>();
 		localDeclarations = new HashMap<String, Declaration>();
