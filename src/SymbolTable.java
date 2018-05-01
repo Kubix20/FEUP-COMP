@@ -557,30 +557,27 @@ public class SymbolTable{
 		currFunction.ifScopeDeclarations.remove(currFunction.ifScopeDeclarations.size()-1);
 	}
 
-	public void analyseStmtlst(SimpleNode node){
-		SimpleNode child;
+	public void analyseStmtlst(ASTStmtlst node){
 		for(int i = 0; i < node.jjtGetNumChildren();i++){
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTWHILE ){
+			if(node.jjtGetChild(i) instanceof ASTWhile){
 				System.out.println("While");
-				analyseExprtest((SimpleNode) child.jjtGetChild(0));
-				analyseStmtlst((SimpleNode) child.jjtGetChild(1));
+				analyseExprtest((ASTExprtest) node.jjtGetChild(i).jjtGetChild(0));
+				analyseStmtlst((ASTStmtlst) node.jjtGetChild(i).jjtGetChild(1));
 			}
 
-			if(child.getId() == YalTreeConstants.JJTIF ){
+			if(node.jjtGetChild(i) instanceof ASTIf){
 				System.out.println("If");
-				analyseIf(child);
+				analyseIf((ASTIf)node.jjtGetChild(i));
 			}
 
-			if(child.getId() == YalTreeConstants.JJTASSIGN ){
+			if(node.jjtGetChild(i) instanceof ASTAssign){
 				System.out.println("Assign");
-				analyseAssign(child);
+				analyseAssign((ASTAssign)node.jjtGetChild(i));
 			}
 
-			if(child.getId() == YalTreeConstants.JJTCALL ){
+			if(node.jjtGetChild(i) instanceof ASTCall){
 				System.out.println("Call");
-				analyseCall(child);
+				analyseCall((ASTCall)node.jjtGetChild(i));
 			}
 		}
 	}
@@ -599,13 +596,10 @@ public class SymbolTable{
 
 		currFunction = functions.get(functionName);
 
-		SimpleNode child;
 		for(int i = 0; i < children;i++){
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTSTMTLST){
+			if(node.jjtGetChild(i) instanceof ASTStmtlst){
 				System.out.println("Stmtlst");
-				analyseStmtlst(child);
+				analyseStmtlst((ASTStmtlst)node.jjtGetChild(i));
 				break;
 			}
 		}
