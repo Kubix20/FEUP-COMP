@@ -447,9 +447,9 @@ public class SymbolTable{
 		return var;
 	}
 
-	public void analyseExprtest(SimpleNode node){
+	public void analyseExprtest(ASTExprtest node){
 		int line = node.getLine();
-		Declaration lhs = analyseAccess((SimpleNode) node.jjtGetChild(0));
+		Declaration lhs = analyseAccess((ASTAccess) node.jjtGetChild(0));
 
 		if(lhs == null)
 			return;
@@ -458,17 +458,16 @@ public class SymbolTable{
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
-		SimpleNode child = (SimpleNode) rhs.jjtGetChild(0);
 
-		if( child.getId() == YalTreeConstants.JJTTERM ){
+		if(rhs.jjtGetChild(0) instanceof ASTTerm){
 			System.out.println("Term");
 			String rhsType;
-			String type1 = analyseTerm(child);
+			String type1 = analyseTerm((ASTTerm)rhs.jjtGetChild(0));
 			rhsType = type1;
 			String type2 = "";
 			if(children == 2){
 				System.out.println("2nd Term");
-				type2 = analyseTerm((SimpleNode) rhs.jjtGetChild(1));
+				type2 = analyseTerm((ASTTerm) rhs.jjtGetChild(1));
 
 				if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
 					logError(line,"Incompatible types for arithmetic expression: "+type1+" and "+type2);
@@ -479,19 +478,17 @@ public class SymbolTable{
 			if(lhsType.compareTo("integer") != 0 || rhsType.compareTo("integer") != 0)
 				logError(line,"Incomparable types "+lhsType+" and "+rhsType);
 		}
-		else
-
-		if(	child.getId() == YalTreeConstants.JJTARRAYSIZE ){
+		else if(rhs.jjtGetChild(0) instanceof ASTArraySize){
 			logError(line,"Unable to compare to array size declaration");
 		}
 	}
 
-	public void analyseIf(SimpleNode node){
+	public void analyseIf(ASTIf node){
 		currFunction.ifScopeDeclarations.add(new ArrayList<Declaration>());
 		int children = node.jjtGetNumChildren();
 
-		analyseExprtest((SimpleNode) node.jjtGetChild(0));
-		analyseStmtlst((SimpleNode) node.jjtGetChild(1));
+		analyseExprtest((ASTExprtest) node.jjtGetChild(0));
+		analyseStmtlst((ASTStmtlst) node.jjtGetChild(1));
 
 		//else clause
 		if(children > 2){
@@ -505,7 +502,7 @@ public class SymbolTable{
 			}
 			currFunction.deleteCurrIfScopeDeclarations();
 
-			analyseStmtlst((SimpleNode) node.jjtGetChild(2));
+			analyseStmtlst((ASTStmtlst) node.jjtGetChild(2));
 			ArrayList<Declaration> elseScope = currFunction.getCurrIfScope();
 			System.out.println("elseScope size: "+elseScope.size());
 
