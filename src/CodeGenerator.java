@@ -6,96 +6,85 @@ import java.util.ArrayList;
 
 public class CodeGenerator {
 
-	/** Tree Root Node */
 	private SimpleNode root;
-	
-	/** Tree Symbol Table */
+
 	private SymbolTable st;
-	
-	/** Current function being generated */
+
 	public Function currFunction;
-	
-	/** Output Stream of the .j file */
+
 	private FileOutputStream fileOut;
-	
-	/** Print Stream of the .j file */
 	private PrintStream fileStream;
-	
-	/** List of Declarations that need to be in the <clinit> method */
+
+	// Declarations to be included in constructor <clinit>
 	private ArrayList<Declaration> initArrays;
-	
-	/** Stack Limit value */
+
 	private int stacklimit;
-	
-	/** Stack's actual value */
 	private int stackval;
-	
-	/** Number of local variables */
+
 	private int localsval;
-	
-	/** Label Counter for goto's */
 	private int label;
-	
-	/** Flags existence of Global Declarations */
-	private boolean decs;
-	
+
+	private boolean hasGlobalAttrs;
+
 	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
 		String outFileName = inputFile.getName().split("\\.")[0] + ".j";
-		
+
 		File file = new File(path+outFileName);
 		try{
 			fileOut = new FileOutputStream(file);
 		}
-		catch(IOException e){}
+		catch(IOException e){
+			System.out.println("Failed to create output stream");
+			System.exit(-1);
+		}
 		fileStream = new PrintStream(this.fileOut);
 		this.st = st;
 		this.root = root;
 		initArrays = new ArrayList<Declaration>();
 		label = 0;
-		decs = false;
+		hasGlobalAttrs = false;
 	}
-	
+
 	public void generate() throws IOException {
 		fileStream.println(".class public " + st.module);
 		fileStream.println(".super java/lang/Object"+System.lineSeparator());
-		
+
 		generateGlobals(root);
-		if(decs)
+		if(hasGlobalAttrs)
 			fileStream.println();
-		
-		//staticCode();
+
 		generateFunctions(root);
-		
+
 		fileStream.close();
 		fileOut.close();
 	}
-	
+
 	private void generateGlobals(SimpleNode node) throws IOException {
 		int children = node.jjtGetNumChildren();
-		
+
 		SimpleNode child;
 		for(int i=0; i< children; i++)
 		{
 			child = (SimpleNode) node.jjtGetChild(i);
-			
+
 			if(child.getId() == YalTreeConstants.JJTDECLARATION)
 			{
 				genDeclaration(child);
-				decs=true;
+				hasGlobalAttrs=true;
 			}
-		}	
-		
+		}
+
 	}
-	
+
 	private void generateFunctions(SimpleNode node) throws IOException{
 		int children = node.jjtGetNumChildren();
-		
+
 		SimpleNode child;
 		for(int i=0; i< children; i++)
 		{
 			child = (SimpleNode) node.jjtGetChild(i);
-			
+
 			if(child.getId() == YalTreeConstants.JJTFUNCTION)
 			{
 				genFunction(child);
@@ -103,9 +92,9 @@ public class CodeGenerator {
 			}
 		}
 	}
-	
+
 	private void genDeclaration(SimpleNode node) throws IOException {
-		
+
 		SimpleNode lhs = (SimpleNode)node.jjtGetChild(0);
 		String name = lhs.getValue();
 
@@ -140,29 +129,29 @@ public class CodeGenerator {
 			if (var.init)
 				initArrays.add(var);
 		}
-		
+
 	}
-	
+
 	private void genFunction(SimpleNode node) throws IOException {
 		String name = node.getValue();
 		if (name.indexOf(".")!=-1) {
 			name = name.substring(name.indexOf(".")+1);
 		}
-		
+
 		currFunction = st.functions.get(name);
 
 		stacklimit = 0;
 		stackval = 0;
 		localsval = 0;
-		
+
 		fileStream.print(".method public static " + name + "(");
-		
+
 		if(name.equals("main")){
 			fileStream.print("[Ljava/lang/String;)V\n");
 			localsval++;
 		}
 		else
-		{	
+		{
 			Declaration param;
 			for (String paramName : currFunction.parameters.keySet()){
 				param = currFunction.parameters.get(paramName);
@@ -184,7 +173,7 @@ public class CodeGenerator {
 
 			fileStream.println();
 		}
-		
+
 		//System.out.println("localsval after parameters: "+localsval);
 		if(currFunction.ret.type.compareTo("void")!=0)
 		{
@@ -225,16 +214,16 @@ public class CodeGenerator {
 
 		//escrever o limit stack e limit locals, no inicio da funcao
 		long tmp = fileOut.getChannel().position();
-		fileOut.getChannel().position(stackpos); 
+		fileOut.getChannel().position(stackpos);
 		fileStream.print(stacklimit);
 		fileOut.getChannel().position(localspos);
 		fileStream.print(localsval);
 
 		fileOut.getChannel().position(tmp);
 	}
-	
+
 	private void genStmtlst(SimpleNode node) throws IOException {
-		
+
 		SimpleNode child;
 		for(int i=0; i< node.jjtGetNumChildren(); i++)
 		{
@@ -243,11 +232,11 @@ public class CodeGenerator {
 			// ASSIGN
 			if(child.getId() == YalTreeConstants.JJTASSIGN)
 			{
-				
+
 				System.out.println("Generating assign...");
 				genAssign(child);
 				fileStream.println();
-			}	
+			}
 			// CALL
 			if(child.getId() == YalTreeConstants.JJTCALL)
 			{
@@ -271,7 +260,7 @@ public class CodeGenerator {
 			}
 		}
 	}
-	
+
 	private void genCall(SimpleNode node) throws IOException{
 		String mod = "";
 		String func = "";
@@ -305,7 +294,7 @@ public class CodeGenerator {
 				ret = "I";
 		}
 		else if(mod.compareTo(st.module) == 0){
-			
+
 			if(st.functions.get(func).ret.isInt())
 				ret = "I";
 			else if(st.functions.get(func).ret.isArray())
@@ -319,17 +308,17 @@ public class CodeGenerator {
 		fileStream.println("invokestatic "+mod+"/"+func+params+ret);
 		changeStack(-nparam);
 	}
-	
+
 	public String argumentList(SimpleNode node){
 		String ret = "(";
-		
+
 		SimpleNode arg;
 		Declaration local;
 		for(int i = 0; i<node.jjtGetNumChildren(); i++)
 		{
 			arg = (SimpleNode)node.jjtGetChild(i);
 			String val = arg.getValue();
-			
+
 			if(val.indexOf("\"") !=-1)
 			{
 				ldStr(val);
@@ -340,10 +329,10 @@ public class CodeGenerator {
 				ret+="I";
 			}
 			else{
-				
+
 				Declaration var = lookupVar(val);
 				ldVar(var);
-				
+
 				if(var.isInt())
 					ret+="I";
 				else if (var.isArray())
@@ -353,19 +342,19 @@ public class CodeGenerator {
 		ret+=")";
 		return ret;
 	}
-	
+
 	private void genAccess(SimpleNode node){
 		String name = node.getValue();
 		boolean sizeAccess = false;
-		
+
 		if(name.indexOf(".")!=-1){
 			name = name.substring(0, name.indexOf("."));
 			sizeAccess = true;
 		}
-		
+
 		Declaration var = lookupVar(name);
 		ldVar(var);
-		
+
 		if(node.jjtGetNumChildren() == 1){
 			String indexName = ((SimpleNode) node.jjtGetChild(0)).getValue();
 			if(SymbolTable.isInt(indexName)){
@@ -375,7 +364,7 @@ public class CodeGenerator {
 				Declaration index = lookupVar(indexName);
 				ldVar(var);
 			}
-			
+
 			fileStream.println("iaload");
 			changeStack(-1);
 		}
@@ -383,18 +372,18 @@ public class CodeGenerator {
 			fileStream.println("arraylength");
 		}
 	}
-	
+
 	private Declaration genAccessAssign(SimpleNode node){
 		String name = node.getValue();
-		
+
 		Declaration var = lookupVarAssign(name);
 		System.out.println(var.name);
-		
+
 		if(var.local == -1){
 			var.local = localsval;
 			localsval++;
 		}
-		
+
 		if(var.isArray()){
 			if(node.jjtGetNumChildren() == 1){
 				String indexName = ((SimpleNode) node.jjtGetChild(0)).getValue();
@@ -405,17 +394,17 @@ public class CodeGenerator {
 					Declaration index = lookupVar(indexName);
 					ldVar(var);
 				}
-				
+
 				var.access="integer";
 			}
 			else
 				var.access="array";
 		}
-		
+
 		return var;
 	}
-	
-	private void genArraySize(SimpleNode node){		
+
+	private void genArraySize(SimpleNode node){
 		if(node.jjtGetNumChildren() > 0){
 			genAccess((SimpleNode) node.jjtGetChild(0));
 		}
@@ -423,17 +412,17 @@ public class CodeGenerator {
 			String val = node.getValue();
 			ldConst(Integer.parseInt(val));
 		}
-		
+
 		fileStream.println("newarray int");
 	}
-		
+
 	private void genAssign(SimpleNode node) throws IOException {
 		Declaration lhs = genAccessAssign((SimpleNode) node.jjtGetChild(0));
-		
+
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
-		
+
 		if(term1.getId() == YalTreeConstants.JJTTERM){
 			genTerm(term1);
 			if(children == 2){
@@ -443,14 +432,14 @@ public class CodeGenerator {
 			}
 		}
 		else
-		
+
 		if(term1.getId() == YalTreeConstants.JJTARRAYSIZE){
 			genArraySize(term1);
 		}
-		
+
 		stVar(lhs);
 	}
-	
+
 	private void genTerm(SimpleNode node) throws IOException {
 		String parts = node.getValue();
 		String op = "";
@@ -462,15 +451,15 @@ public class CodeGenerator {
 			op = ""+parts.charAt(0);
 			value = parts.substring(1,parts.length()).trim();
 		}
-		
+
 		if(node.jjtGetNumChildren() == 1){
 			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
-			
+
 			if(child.getId() == YalTreeConstants.JJTACCESS){
 				genAccess(child);
 			}
 			else
-				
+
 			if(child.getId() == YalTreeConstants.JJTCALL){
 				genCall(child);
 			}
@@ -478,18 +467,18 @@ public class CodeGenerator {
 		else{
 			ldConst(Integer.parseInt(value));
 		}
-		
+
 		if(op.compareTo("-")==0)
 			fileStream.println("ineg");
 	}
-	
+
 	private void genExprtest(SimpleNode node) throws IOException {
 		genAccess((SimpleNode) node.jjtGetChild(0));
-		
+
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
-		
+
 		if(term1.getId() == YalTreeConstants.JJTTERM){
 			genTerm(term1);
 			if(children == 2){
@@ -498,29 +487,29 @@ public class CodeGenerator {
 				fileStream.println(op2str(rhs.getValue()));
 			}
 		}
-		
+
 		fileStream.println(cmpop2str(node.getValue()));
 	}
-	
+
 	private void genIf(SimpleNode node) throws IOException {
 		genExprtest((SimpleNode) node.jjtGetChild(0));
 		fileStream.println();
 		genStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
-	
+
 	private void genWhile(SimpleNode node) throws IOException {
 		genExprtest((SimpleNode) node.jjtGetChild(0));
 		fileStream.println();
 		genStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
-	
+
 	private void stVar(Declaration var){
 		if(var.global)
 			stGlobal(var);
 		else
 			stLocal(var);
 	}
-	
+
 	private void stLocal(Declaration var){
 		if(var.local==-1)
 		{
@@ -533,16 +522,16 @@ public class CodeGenerator {
 			type="i";
 		else
 			type="a";
-		
+
 		int i = var.local;
 		if(i>3)
 			fileStream.println(type+"store "+i);
 		else
 			fileStream.println(type+"store_"+i);
-		
+
 		changeStack(-1);
 	}
-	
+
 	private void stGlobal(Declaration var){
 		fileStream.print("putstatic " + st.module + "/" + var.name );
 		if(var.isInt())
@@ -551,7 +540,7 @@ public class CodeGenerator {
 			fileStream.println(" [I");
 		changeStack(-1);
 	}
-	
+
 	private void ldVar(Declaration var){
 		if(var.isArray() && var.intAccess()){
 			fileStream.println("iastore");
@@ -564,14 +553,14 @@ public class CodeGenerator {
 				ldLocal(var);
 		}
 	}
-	
+
 	private void ldLocal(Declaration var){
 		String type;
 		if(var.isInt())
 			type="i";
 		else
 			type="a";
-		
+
 		int i=var.local;
 		if(i<0)
 			return;
@@ -580,10 +569,10 @@ public class CodeGenerator {
 			fileStream.println(type+"load "+i);
 		else
 			fileStream.println(type+"load_"+i);
-		
+
 		changeStack(1);
 	}
-	
+
 	private void ldGlobal(Declaration var){
 		fileStream.print("getstatic " + st.module + "/" + var.name);
 		if(var.isInt())
@@ -592,7 +581,7 @@ public class CodeGenerator {
 			fileStream.println(" [I");
 		changeStack(1);
 	}
-	
+
 	private void ldConst(int val){
 		if( val>5 || val<0){
 			if((val>=-128 && val<=127)){
@@ -606,15 +595,15 @@ public class CodeGenerator {
 			}
 		} else
 			fileStream.println("iconst_" + val);
-		
+
 		changeStack(1);
 	}
-	
+
 	public void ldStr(String str){
 		fileStream.println("ldc " + str);
 		changeStack(1);
 	}
-	
+
 	public String op2str(String op){
 		String res="";
 		if(op.compareTo("*")==0){
@@ -637,7 +626,7 @@ public class CodeGenerator {
 		changeStack(-1);
 		return res;
 	}
-	
+
 	public String cmpop2str(String op){
 		String res="";
 		if(op.compareTo("==")==0)
@@ -654,8 +643,8 @@ public class CodeGenerator {
 			res="if_icmpge";
 		changeStack(-2);
 		return res;
-	}	
-	
+	}
+
 	private void changeStack(int i){
 		stackval = stackval + i;
 		if(stackval < 0)
@@ -663,46 +652,46 @@ public class CodeGenerator {
 		if(stackval > stacklimit)
 			stacklimit = stackval;
 	}
-	
+
 	private Declaration lookupVar(String name){
 		if(currFunction != null){
 			if(currFunction.localDeclarations.containsKey(name)){
 				return currFunction.localDeclarations.get(name);
 			}
-			
+
 			if(currFunction.parameters.containsKey(name)){
 				return currFunction.parameters.get(name);
 			}
-			
+
 			if(currFunction.ret.name.compareTo(name)==0){
 				return currFunction.ret;
 			}
 		}
-			
+
 		if(st.globalDeclarations.containsKey(name))
 			return st.globalDeclarations.get(name);
-		
+
 		return null;
 	}
-	
+
 	private Declaration lookupVarAssign(String name){
 		if(currFunction != null){
 			if(currFunction.localDeclarations.containsKey(name)){
 				return currFunction.localDeclarations.get(name);
 			}
-			
+
 			if(currFunction.ret.name.compareTo(name)==0){
 				return currFunction.ret;
 			}
-			
+
 			if(currFunction.parameters.containsKey(name)){
 				return currFunction.parameters.get(name);
 			}
 		}
-			
+
 		if(st.globalDeclarations.containsKey(name))
 			return st.globalDeclarations.get(name);
-		
+
 		return null;
 	}
 }
