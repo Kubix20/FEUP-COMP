@@ -421,7 +421,7 @@ public class CodeGenerator {
 		storeVar(lhs);
 	}
 
-	private void generateTerm(SimpleNode node) throws IOException {
+	private void generateTerm(ASTTerm node) throws IOException {
 		String parts = node.getValue();
 		String op = "";
 		String value = "";
@@ -434,15 +434,11 @@ public class CodeGenerator {
 		}
 
 		if(node.jjtGetNumChildren() == 1){
-			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
-
-			if(child.getId() == YalTreeConstants.JJTACCESS){
-				generateAccess(child);
+			if(node.jjtGetChild(0) instanceof ASTAccess){
+				generateAccess((ASTAccess)node.jjtGetChild(0));
 			}
-			else
-
-			if(child.getId() == YalTreeConstants.JJTCALL){
-				generateCall(child);
+			else if(node.jjtGetChild(0) instanceof ASTCall){
+				generateCall((ASTCall)node.jjtGetChild(0));
 			}
 		}
 		else{
@@ -453,18 +449,16 @@ public class CodeGenerator {
 			fileStream.println("ineg");
 	}
 
-	private void generateExprtest(SimpleNode node) throws IOException {
-		generateAccess((SimpleNode) node.jjtGetChild(0));
+	private void generateExprtest(ASTExprtest node) throws IOException {
+		generateAccess((ASTAccess) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
-		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
-		if(term1.getId() == YalTreeConstants.JJTTERM){
-			generateTerm(term1);
+		if(rhs.jjtGetChild(0) instanceof ASTTerm){
+			generateTerm((ASTTerm)rhs.jjtGetChild(0));
 			if(children == 2){
-				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
-				generateTerm(term2);
+				generateTerm((ASTTerm)rhs.jjtGetChild(1));
 				fileStream.println(OpToString(rhs.getValue()));
 			}
 		}
@@ -472,16 +466,16 @@ public class CodeGenerator {
 		fileStream.println(cmpOpToString(node.getValue()));
 	}
 
-	private void generateIf(SimpleNode node) throws IOException {
-		generateExprtest((SimpleNode) node.jjtGetChild(0));
+	private void generateIf(ASTIf node) throws IOException {
+		generateExprtest((ASTExprtest) node.jjtGetChild(0));
 		fileStream.println();
-		generateStmtlst((SimpleNode) node.jjtGetChild(1));
+		generateStmtlst((ASTStmtlst) node.jjtGetChild(1));
 	}
 
-	private void generateWhile(SimpleNode node) throws IOException {
-		generateExprtest((SimpleNode) node.jjtGetChild(0));
+	private void generateWhile(ASTWhile node) throws IOException {
+		generateExprtest((ASTExprtest) node.jjtGetChild(0));
 		fileStream.println();
-		generateStmtlst((SimpleNode) node.jjtGetChild(1));
+		generateStmtlst((ASTStmtlst) node.jjtGetChild(1));
 	}
 
 	private void storeVar(Declaration var){
