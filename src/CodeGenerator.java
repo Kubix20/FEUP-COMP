@@ -26,7 +26,7 @@ public class CodeGenerator {
 
 	private boolean hasGlobalAttrs;
 
-	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
+	public CodeGenerator(File inputFile, ASTModule root, SymbolTable st) {
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
 		String outFileName = inputFile.getName().split("\\.")[0] + ".j";
 
@@ -60,40 +60,34 @@ public class CodeGenerator {
 		fileOut.close();
 	}
 
-	private void generateGlobals(SimpleNode node) throws IOException {
+	private void generateGlobals(ASTModule node) throws IOException {
 		int children = node.jjtGetNumChildren();
 
-		SimpleNode child;
 		for(int i=0; i< children; i++)
 		{
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTDECLARATION)
+			if(node.jjtGetChild(i) instanceof ASTDeclaration)
 			{
-				generateDeclaration(child);
+				generateDeclaration((ASTDeclaration)node.jjtGetChild(i));
 				hasGlobalAttrs=true;
 			}
 		}
 
 	}
 
-	private void generateFunctions(SimpleNode node) throws IOException{
+	private void generateFunctions(ASTModule node) throws IOException{
 		int children = node.jjtGetNumChildren();
 
-		SimpleNode child;
 		for(int i=0; i< children; i++)
 		{
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTFUNCTION)
+			if(node.jjtGetChild(i) instanceof ASTFunction)
 			{
-				generateFunction(child);
+				generateFunction((ASTFunction)node.jjtGetChild(i));
 				fileStream.println();
 			}
 		}
 	}
 
-	private void generateDeclaration(SimpleNode node) throws IOException {
+	private void generateDeclaration(ASTDeclaration node) throws IOException {
 
 		SimpleNode lhs = (SimpleNode)node.jjtGetChild(0);
 		String name = lhs.getValue();
@@ -132,7 +126,7 @@ public class CodeGenerator {
 
 	}
 
-	private void generateFunction(SimpleNode node) throws IOException {
+	private void generateFunction(ASTFunction node) throws IOException {
 		String name = node.getValue();
 		if (name.indexOf(".")!=-1) {
 			name = name.substring(name.indexOf(".")+1);
@@ -188,13 +182,11 @@ public class CodeGenerator {
 
 		fileStream.println();
 
-		SimpleNode child;
 		for(int i=0; i< node.jjtGetNumChildren(); i++)
 		{
-			child = (SimpleNode) node.jjtGetChild(i);
-			if(child.getId() == YalTreeConstants.JJTSTMTLST)
+			if(node.jjtGetChild(i) instanceof ASTStmtlst)
 			{
-				generateStmtlst(child);
+				generateStmtlst((ASTStmtlst)node.jjtGetChild(i));
 			}
 		}
 
