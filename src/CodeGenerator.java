@@ -70,7 +70,7 @@ public class CodeGenerator {
 
 			if(child.getId() == YalTreeConstants.JJTDECLARATION)
 			{
-				genDeclaration(child);
+				generateDeclaration(child);
 				hasGlobalAttrs=true;
 			}
 		}
@@ -87,13 +87,13 @@ public class CodeGenerator {
 
 			if(child.getId() == YalTreeConstants.JJTFUNCTION)
 			{
-				genFunction(child);
+				generateFunction(child);
 				fileStream.println();
 			}
 		}
 	}
 
-	private void genDeclaration(SimpleNode node) throws IOException {
+	private void generateDeclaration(SimpleNode node) throws IOException {
 
 		SimpleNode lhs = (SimpleNode)node.jjtGetChild(0);
 		String name = lhs.getValue();
@@ -132,7 +132,7 @@ public class CodeGenerator {
 
 	}
 
-	private void genFunction(SimpleNode node) throws IOException {
+	private void generateFunction(SimpleNode node) throws IOException {
 		String name = node.getValue();
 		if (name.indexOf(".")!=-1) {
 			name = name.substring(name.indexOf(".")+1);
@@ -194,7 +194,7 @@ public class CodeGenerator {
 			child = (SimpleNode) node.jjtGetChild(i);
 			if(child.getId() == YalTreeConstants.JJTSTMTLST)
 			{
-				genStmtlst(child);
+				generateStmtlst(child);
 			}
 		}
 
@@ -222,14 +222,13 @@ public class CodeGenerator {
 		fileOut.getChannel().position(tmp);
 	}
 
-	private void genStmtlst(SimpleNode node) throws IOException {
+	private void generateStmtlst(SimpleNode node) throws IOException {
 
 		SimpleNode child;
 		for(int i=0; i< node.jjtGetNumChildren(); i++)
 		{
 			child = (SimpleNode) node.jjtGetChild(i);
 
-			// ASSIGN
 			if(child.getId() == YalTreeConstants.JJTASSIGN)
 			{
 
@@ -237,31 +236,31 @@ public class CodeGenerator {
 				genAssign(child);
 				fileStream.println();
 			}
-			// CALL
+
 			if(child.getId() == YalTreeConstants.JJTCALL)
 			{
 				System.out.println("Generating call...");
-				genCall(child);
+				generateCall(child);
 				fileStream.println();
 			}
-			// WHILE
+
 			if(child.getId() == YalTreeConstants.JJTIF)
 			{
 				System.out.println("Generating if...");
-				genIf(child);
+				generateIf(child);
 				fileStream.println();
 			}
-			// IF
+
 			if(child.getId() == YalTreeConstants.JJTWHILE)
 			{
 				System.out.println("Generating while...");
-				genWhile(child);
+				generateWhile(child);
 				fileStream.println();
 			}
 		}
 	}
 
-	private void genCall(SimpleNode node) throws IOException{
+	private void generateCall(SimpleNode node) throws IOException{
 		String mod = "";
 		String func = "";
 		String params = "";
@@ -281,7 +280,7 @@ public class CodeGenerator {
 		}
 
 		if(node.jjtGetNumChildren() != 0){
-			params = argumentList((SimpleNode) node.jjtGetChild(0));
+			params = generateArgumentList((SimpleNode) node.jjtGetChild(0));
 			nparam = node.jjtGetChild(0).jjtGetNumChildren();
 		}
 		else
@@ -309,7 +308,7 @@ public class CodeGenerator {
 		changeStack(-nparam);
 	}
 
-	public String argumentList(SimpleNode node){
+	public String generateArgumentList(SimpleNode node){
 		String ret = "(";
 
 		SimpleNode arg;
@@ -343,7 +342,7 @@ public class CodeGenerator {
 		return ret;
 	}
 
-	private void genAccess(SimpleNode node){
+	private void generateAccess(SimpleNode node){
 		String name = node.getValue();
 		boolean sizeAccess = false;
 
@@ -373,7 +372,7 @@ public class CodeGenerator {
 		}
 	}
 
-	private Declaration genAccessAssign(SimpleNode node){
+	private Declaration generateAccessAssign(SimpleNode node){
 		String name = node.getValue();
 
 		Declaration var = lookupVarAssign(name);
@@ -404,9 +403,9 @@ public class CodeGenerator {
 		return var;
 	}
 
-	private void genArraySize(SimpleNode node){
+	private void generateArraySize(SimpleNode node){
 		if(node.jjtGetNumChildren() > 0){
-			genAccess((SimpleNode) node.jjtGetChild(0));
+			generateAccess((SimpleNode) node.jjtGetChild(0));
 		}
 		else{
 			String val = node.getValue();
@@ -417,30 +416,30 @@ public class CodeGenerator {
 	}
 
 	private void genAssign(SimpleNode node) throws IOException {
-		Declaration lhs = genAccessAssign((SimpleNode) node.jjtGetChild(0));
+		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
 		if(term1.getId() == YalTreeConstants.JJTTERM){
-			genTerm(term1);
+			generateTerm(term1);
 			if(children == 2){
 				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
-				genTerm(term2);
+				generateTerm(term2);
 				fileStream.println(op2str(rhs.getValue()));
 			}
 		}
 		else
 
 		if(term1.getId() == YalTreeConstants.JJTARRAYSIZE){
-			genArraySize(term1);
+			generateArraySize(term1);
 		}
 
 		stVar(lhs);
 	}
 
-	private void genTerm(SimpleNode node) throws IOException {
+	private void generateTerm(SimpleNode node) throws IOException {
 		String parts = node.getValue();
 		String op = "";
 		String value = "";
@@ -456,12 +455,12 @@ public class CodeGenerator {
 			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
 
 			if(child.getId() == YalTreeConstants.JJTACCESS){
-				genAccess(child);
+				generateAccess(child);
 			}
 			else
 
 			if(child.getId() == YalTreeConstants.JJTCALL){
-				genCall(child);
+				generateCall(child);
 			}
 		}
 		else{
@@ -472,18 +471,18 @@ public class CodeGenerator {
 			fileStream.println("ineg");
 	}
 
-	private void genExprtest(SimpleNode node) throws IOException {
-		genAccess((SimpleNode) node.jjtGetChild(0));
+	private void generateExprtest(SimpleNode node) throws IOException {
+		generateAccess((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
 		if(term1.getId() == YalTreeConstants.JJTTERM){
-			genTerm(term1);
+			generateTerm(term1);
 			if(children == 2){
 				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
-				genTerm(term2);
+				generateTerm(term2);
 				fileStream.println(op2str(rhs.getValue()));
 			}
 		}
@@ -491,16 +490,16 @@ public class CodeGenerator {
 		fileStream.println(cmpop2str(node.getValue()));
 	}
 
-	private void genIf(SimpleNode node) throws IOException {
-		genExprtest((SimpleNode) node.jjtGetChild(0));
+	private void generateIf(SimpleNode node) throws IOException {
+		generateExprtest((SimpleNode) node.jjtGetChild(0));
 		fileStream.println();
-		genStmtlst((SimpleNode) node.jjtGetChild(1));
+		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
 
-	private void genWhile(SimpleNode node) throws IOException {
-		genExprtest((SimpleNode) node.jjtGetChild(0));
+	private void generateWhile(SimpleNode node) throws IOException {
+		generateExprtest((SimpleNode) node.jjtGetChild(0));
 		fileStream.println();
-		genStmtlst((SimpleNode) node.jjtGetChild(1));
+		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
 
 	private void stVar(Declaration var){
