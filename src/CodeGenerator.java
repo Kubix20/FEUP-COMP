@@ -582,18 +582,18 @@ public class CodeGenerator {
 	}
 
 	private void loadConst(int val){
-		if( val>5 || val<0){
-			if((val>=-128 && val<=127)){
-				fileStream.println("bipush " + val);
-			}
-			else if(val>=-32768 && val<=32767){
-				fileStream.println("sipush " + val);
-			}
-			else{
-				fileStream.println("ldc " + val);
-			}
-		} else
+		//iconst - otimizado para inteiros 0 a 5
+		if(val >= 0 && val <= 5)
 			fileStream.println("iconst_" + val);
+		//bipush - otimizado para inteiros representaveis em 1 byte
+		else if(val>=-128 && val<=127)
+			fileStream.println("bipush " + val);
+		//sipush - otimizado para inteiros representaveis em 2 bytes
+		else if(val>=-32768 && val<=32767)
+			fileStream.println("sipush " + val);
+		//nao ha otimizacoes possiveis para carregar a constante
+		else
+			fileStream.println("ldc " + val);
 
 		updateStack(1);
 	}
@@ -637,6 +637,8 @@ public class CodeGenerator {
 		return res;
 	}
 
+	// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
+	// ex: se condicao if(a > b) o salto sera feito quando a <= b
 	public String cmpOpToString(String op){
 		String res = "";
 		switch(op) {
