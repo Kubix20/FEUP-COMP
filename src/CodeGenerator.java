@@ -168,7 +168,6 @@ public class CodeGenerator {
 			fileStream.println();
 		}
 
-		//System.out.println("localsval after parameters: "+localsval);
 		if(currFunction.ret.type.compareTo("void")!=0)
 		{
 			currFunction.ret.local=localsval;
@@ -214,45 +213,40 @@ public class CodeGenerator {
 		fileOut.getChannel().position(tmp);
 	}
 
-	private void generateStmtlst(SimpleNode node) throws IOException {
-
-		SimpleNode child;
+	private void generateStmtlst(ASTStmtlst node) throws IOException {
 		for(int i=0; i< node.jjtGetNumChildren(); i++)
 		{
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTASSIGN)
+			if(node.jjtGetChild(i) instanceof ASTAssign)
 			{
-
 				System.out.println("Generating assign...");
-				genAssign(child);
+				generateAssign((ASTAssign)node.jjtGetChild(i));
 				fileStream.println();
 			}
 
-			if(child.getId() == YalTreeConstants.JJTCALL)
+			if(node.jjtGetChild(i) instanceof ASTCall)
 			{
 				System.out.println("Generating call...");
-				generateCall(child);
+				generateCall((ASTCall)node.jjtGetChild(i));
 				fileStream.println();
 			}
 
-			if(child.getId() == YalTreeConstants.JJTIF)
+			if(node.jjtGetChild(i) instanceof ASTIf)
 			{
 				System.out.println("Generating if...");
-				generateIf(child);
+				generateIf((ASTIf)node.jjtGetChild(i));
 				fileStream.println();
 			}
 
-			if(child.getId() == YalTreeConstants.JJTWHILE)
+			if(node.jjtGetChild(i) instanceof ASTWhile)
 			{
 				System.out.println("Generating while...");
-				generateWhile(child);
+				generateWhile((ASTWhile)node.jjtGetChild(i));
 				fileStream.println();
 			}
 		}
 	}
 
-	private void generateCall(SimpleNode node) throws IOException{
+	private void generateCall(ASTCall node) throws IOException{
 		String mod = "";
 		String func = "";
 		String params = "";
@@ -266,13 +260,13 @@ public class CodeGenerator {
 			func = name.substring(dotIndex+1,name.length());
 		}
 		else{
-			//REVER ISTO NA SEMANTICA
+			//TODO: REVER ISTO NA SEMANTICA
 			func = name;
 			mod = st.module;
 		}
 
 		if(node.jjtGetNumChildren() != 0){
-			params = generateArgumentList((SimpleNode) node.jjtGetChild(0));
+			params = generateArgumentList((ASTVarlist) node.jjtGetChild(0));
 			nparam = node.jjtGetChild(0).jjtGetNumChildren();
 		}
 		else
@@ -300,7 +294,7 @@ public class CodeGenerator {
 		updateStack(-nparam);
 	}
 
-	public String generateArgumentList(SimpleNode node){
+	public String generateArgumentList(ASTVarlist node){
 		String ret = "(";
 
 		SimpleNode arg;
@@ -407,7 +401,7 @@ public class CodeGenerator {
 		fileStream.println("newarray int");
 	}
 
-	private void genAssign(SimpleNode node) throws IOException {
+	private void generateAssign(SimpleNode node) throws IOException {
 		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
