@@ -200,7 +200,7 @@ public class CodeGenerator {
 
 		if(currFunction.ret.type.compareTo("void")!=0)
 		{
-			ldLocal(currFunction.ret);
+			loadLocal(currFunction.ret);
 
 			if(currFunction.ret.isInt())
 				fileStream.println("ireturn");
@@ -305,7 +305,7 @@ public class CodeGenerator {
 			ret ="I";
 
 		fileStream.println("invokestatic "+mod+"/"+func+params+ret);
-		changeStack(-nparam);
+		updateStack(-nparam);
 	}
 
 	public String generateArgumentList(SimpleNode node){
@@ -320,17 +320,17 @@ public class CodeGenerator {
 
 			if(val.indexOf("\"") !=-1)
 			{
-				ldStr(val);
+				loadString(val);
 				ret+="Ljava/lang/String;";
 			}
 			else if(SymbolTable.isInt(val)){
-				ldConst(Integer.parseInt(val));
+				loadConst(Integer.parseInt(val));
 				ret+="I";
 			}
 			else{
 
 				Declaration var = lookupVar(val);
-				ldVar(var);
+				loadVar(var);
 
 				if(var.isInt())
 					ret+="I";
@@ -352,20 +352,20 @@ public class CodeGenerator {
 		}
 
 		Declaration var = lookupVar(name);
-		ldVar(var);
+		loadVar(var);
 
 		if(node.jjtGetNumChildren() == 1){
 			String indexName = ((SimpleNode) node.jjtGetChild(0)).getValue();
 			if(SymbolTable.isInt(indexName)){
-				ldConst(Integer.parseInt(indexName));
+				loadConst(Integer.parseInt(indexName));
 			}
 			else{
 				Declaration index = lookupVar(indexName);
-				ldVar(var);
+				loadVar(var);
 			}
 
 			fileStream.println("iaload");
-			changeStack(-1);
+			updateStack(-1);
 		}
 		else if(sizeAccess){
 			fileStream.println("arraylength");
@@ -387,11 +387,11 @@ public class CodeGenerator {
 			if(node.jjtGetNumChildren() == 1){
 				String indexName = ((SimpleNode) node.jjtGetChild(0)).getValue();
 				if(SymbolTable.isInt(indexName)){
-					ldConst(Integer.parseInt(indexName));
+					loadConst(Integer.parseInt(indexName));
 				}
 				else{
 					Declaration index = lookupVar(indexName);
-					ldVar(var);
+					loadVar(var);
 				}
 
 				var.access="integer";
@@ -409,7 +409,7 @@ public class CodeGenerator {
 		}
 		else{
 			String val = node.getValue();
-			ldConst(Integer.parseInt(val));
+			loadConst(Integer.parseInt(val));
 		}
 
 		fileStream.println("newarray int");
@@ -427,7 +427,7 @@ public class CodeGenerator {
 			if(children == 2){
 				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
 				generateTerm(term2);
-				fileStream.println(op2str(rhs.getValue()));
+				fileStream.println(OpToString(rhs.getValue()));
 			}
 		}
 		else
@@ -436,7 +436,7 @@ public class CodeGenerator {
 			generateArraySize(term1);
 		}
 
-		stVar(lhs);
+		storeVar(lhs);
 	}
 
 	private void generateTerm(SimpleNode node) throws IOException {
@@ -464,7 +464,7 @@ public class CodeGenerator {
 			}
 		}
 		else{
-			ldConst(Integer.parseInt(value));
+			loadConst(Integer.parseInt(value));
 		}
 
 		if(op.compareTo("-")==0)
@@ -483,11 +483,11 @@ public class CodeGenerator {
 			if(children == 2){
 				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
 				generateTerm(term2);
-				fileStream.println(op2str(rhs.getValue()));
+				fileStream.println(OpToString(rhs.getValue()));
 			}
 		}
 
-		fileStream.println(cmpop2str(node.getValue()));
+		fileStream.println(cmpOpToString(node.getValue()));
 	}
 
 	private void generateIf(SimpleNode node) throws IOException {
@@ -502,14 +502,14 @@ public class CodeGenerator {
 		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
 
-	private void stVar(Declaration var){
+	private void storeVar(Declaration var){
 		if(var.global)
-			stGlobal(var);
+			storeGlobal(var);
 		else
-			stLocal(var);
+			storeLocal(var);
 	}
 
-	private void stLocal(Declaration var){
+	private void storeLocal(Declaration var){
 		if(var.local==-1)
 		{
 			var.local = localsval;
@@ -528,32 +528,32 @@ public class CodeGenerator {
 		else
 			fileStream.println(type+"store_"+i);
 
-		changeStack(-1);
+		updateStack(-1);
 	}
 
-	private void stGlobal(Declaration var){
+	private void storeGlobal(Declaration var){
 		fileStream.print("putstatic " + st.module + "/" + var.name );
 		if(var.isInt())
 			fileStream.println(" I");
 		else
 			fileStream.println(" [I");
-		changeStack(-1);
+		updateStack(-1);
 	}
 
-	private void ldVar(Declaration var){
+	private void loadVar(Declaration var){
 		if(var.isArray() && var.intAccess()){
 			fileStream.println("iastore");
-			changeStack(-3);
+			updateStack(-3);
 		}
 		else{
 			if(var.global)
-				ldGlobal(var);
+				loadGlobal(var);
 			else
-				ldLocal(var);
+				loadLocal(var);
 		}
 	}
 
-	private void ldLocal(Declaration var){
+	private void loadLocal(Declaration var){
 		String type;
 		if(var.isInt())
 			type="i";
@@ -569,19 +569,19 @@ public class CodeGenerator {
 		else
 			fileStream.println(type+"load_"+i);
 
-		changeStack(1);
+		updateStack(1);
 	}
 
-	private void ldGlobal(Declaration var){
+	private void loadGlobal(Declaration var){
 		fileStream.print("getstatic " + st.module + "/" + var.name);
 		if(var.isInt())
 			fileStream.println(" I");
 		else
 			fileStream.println(" [I");
-		changeStack(1);
+		updateStack(1);
 	}
 
-	private void ldConst(int val){
+	private void loadConst(int val){
 		if( val>5 || val<0){
 			if((val>=-128 && val<=127)){
 				fileStream.println("bipush " + val);
@@ -595,61 +595,80 @@ public class CodeGenerator {
 		} else
 			fileStream.println("iconst_" + val);
 
-		changeStack(1);
+		updateStack(1);
 	}
 
-	public void ldStr(String str){
+	public void loadString(String str){
 		fileStream.println("ldc " + str);
-		changeStack(1);
+		updateStack(1);
 	}
 
-	public String op2str(String op){
-		String res="";
-		if(op.compareTo("*")==0){
-			res="imul";
-		}else if(op.compareTo("/")==0){
-			res="idiv";
-		}else if(op.compareTo("<<")==0){
-			res="ishl";
-		}else if(op.compareTo(">>")==0){
-			res="ishr";
-		}else if(op.compareTo("&")==0){
-			res="iand";
-		}else if(op.compareTo("+")==0){
-			res="iadd";
-		}else if(op.compareTo("-")==0){
-			res="isub";
-		}else if(op.compareTo("|")==0){
-			res="ior";
+	public String OpToString(String op){
+		String res = "";
+		switch(op) {
+			case "+":
+				res = "iadd";
+				break;
+			case "-":
+				res = "isub";
+				break;
+			case "*":
+				res = "imul";
+				break;
+			case "/":
+				res = "idiv";
+				break;
+			case "<<":
+				res = "ishl";
+				break;
+			case ">>":
+				res = "ishr";
+				break;
+			case "&":
+				res = "iand";
+				break;
+			case "|":
+				res = "ior";
+				break;
+			default:
+				break;
 		}
-		changeStack(-1);
+		updateStack(-1);
 		return res;
 	}
 
-	public String cmpop2str(String op){
-		String res="";
-		if(op.compareTo("==")==0)
-			res="if_icmpne";
-		else if(op.compareTo("=<")==0 || op.compareTo("<=")==0)
-			res="if_icmpgt";
-		else if(op.compareTo("=>")==0 || op.compareTo(">=")==0)
-			res="if_icmplt";
-		else if(op.compareTo(">")==0)
-			res="if_icmple";
-		else if(op.compareTo("!=")==0)
-			res="if_icmpeq";
-		else if(op.compareTo("<")==0)
-			res="if_icmpge";
-		changeStack(-2);
+	public String cmpOpToString(String op){
+		String res = "";
+		switch(op) {
+			case "==":
+				res = "if_icmpne";
+				break;
+			case "!=":
+				res = "if_icmpeq";
+				break;
+			case "<=":
+				res = "if_icmpgt";
+				break;
+			case ">=":
+				res = "if_icmplt";
+				break;
+			case ">":
+				res = "if_cmple";
+				break;
+			case "<":
+				res = "if_icmpge";
+				break;
+			default:
+				break;
+		}
+
+		updateStack(-2);
 		return res;
 	}
 
-	private void changeStack(int i){
-		stackval = stackval + i;
-		if(stackval < 0)
-			stackval = 0;
-		if(stackval > stacklimit)
-			stacklimit = stackval;
+	private void updateStack(int factor){
+		stackval = (stackval + factor < 0 ? 0 : stackval + factor);
+		if(stackval > stacklimit) stacklimit = stackval;
 	}
 
 	private Declaration lookupVar(String name){
