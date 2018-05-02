@@ -328,7 +328,7 @@ public class CodeGenerator {
 		return ret;
 	}
 
-	private void generateAccess(SimpleNode node){
+	private void generateAccess(ASTAccess node){
 		String name = node.getValue();
 		boolean sizeAccess = false;
 
@@ -389,9 +389,9 @@ public class CodeGenerator {
 		return var;
 	}
 
-	private void generateArraySize(SimpleNode node){
+	private void generateArraySize(ASTArraySize node){
 		if(node.jjtGetNumChildren() > 0){
-			generateAccess((SimpleNode) node.jjtGetChild(0));
+			generateAccess((ASTAccess) node.jjtGetChild(0));
 		}
 		else{
 			String val = node.getValue();
@@ -401,25 +401,21 @@ public class CodeGenerator {
 		fileStream.println("newarray int");
 	}
 
-	private void generateAssign(SimpleNode node) throws IOException {
+	private void generateAssign(ASTAssign node) throws IOException {
 		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
-		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
-		if(term1.getId() == YalTreeConstants.JJTTERM){
-			generateTerm(term1);
+		if(rhs.jjtGetChild(0) instanceof ASTTerm){
+			generateTerm((ASTTerm)rhs.jjtGetChild(0));
 			if(children == 2){
-				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
-				generateTerm(term2);
+				generateTerm((ASTTerm)rhs.jjtGetChild(1));
 				fileStream.println(OpToString(rhs.getValue()));
 			}
 		}
-		else
-
-		if(term1.getId() == YalTreeConstants.JJTARRAYSIZE){
-			generateArraySize(term1);
+		else if(rhs.jjtGetChild(0) instanceof ASTArraySize){
+			generateArraySize((ASTArraySize)rhs.jjtGetChild(0));
 		}
 
 		storeVar(lhs);
