@@ -366,7 +366,7 @@ public class SymbolTable{
 		return var;
 	}
 
-	public Declaration analyseAccess(ASTDeclaration node){
+	public Declaration analyseAccess(ASTAccess node){
 		int line = node.getLine();
 		String name = node.getValue();
 
@@ -750,7 +750,7 @@ public class SymbolTable{
 			else if(root.jjtGetChild(i) instanceof ASTFunction)
 			{
 				System.out.println("Function");
-				analyseFunction(root.jjtGetChild(i));
+				analyseFunction((ASTFunction)root.jjtGetChild(i));
 			}
 		}
 	}

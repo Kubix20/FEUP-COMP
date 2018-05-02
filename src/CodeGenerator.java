@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class CodeGenerator {
 
-	private SimpleNode root;
+	private ASTModule root;
 
 	private SymbolTable st;
 
