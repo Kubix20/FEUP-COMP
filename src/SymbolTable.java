@@ -231,7 +231,7 @@ public class SymbolTable{
 		return ret;
 	}
 
-	public String analyseTerm(SimpleNode node){
+	public String analyseTerm(ASTTerm node){
 		int line = node.getLine();
 
 		String parts = node.getValue();
@@ -251,11 +251,10 @@ public class SymbolTable{
 		System.out.println("Term value: "+value);
 
 		if(node.jjtGetNumChildren() == 1) {
-			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
 			Declaration var;
 
-			if( child.getId() == YalTreeConstants.JJTACCESS ){
-				var = analyseAccess(child);
+			if(node.jjtGetChild(0) instanceof ASTAccess){
+				var = analyseAccess((ASTAccess)node.jjtGetChild(0));
 
 				if(var != null){
 
@@ -275,8 +274,8 @@ public class SymbolTable{
 				}
 			}
 
-			if( child.getId() == YalTreeConstants.JJTCALL ){
-				var = analyseCall(child);
+			if(node.jjtGetChild(0) instanceof ASTCall){
+				var = analyseCall((ASTCall)node.jjtGetChild(0));
 
 				if(var != null){
 					if(var.isArray() && op.compareTo("")!=0){
@@ -296,9 +295,9 @@ public class SymbolTable{
 		return "undefined";
 	}
 
-	public boolean analyseArraySize(SimpleNode node){
+	public boolean analyseArraySize(ASTArraySize node){
 		if(node.jjtGetNumChildren() > 0){
-			Declaration access = analyseAccess((SimpleNode) node.jjtGetChild(0));
+			Declaration access = analyseAccess((ASTAccess) node.jjtGetChild(0));
 
 			if(access == null)
 				return false;
@@ -370,7 +369,7 @@ public class SymbolTable{
 		return var;
 	}
 
-	public Declaration analyseAccess(SimpleNode node){
+	public Declaration analyseAccess(ASTDeclaration node){
 		int line = node.getLine();
 		String name = node.getValue();
 
