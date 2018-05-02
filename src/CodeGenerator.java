@@ -6,27 +6,19 @@ import java.util.ArrayList;
 
 public class CodeGenerator {
 
-	private ASTModule root;
-
+	private SimpleNode root;
 	private SymbolTable st;
-
 	public Function currFunction;
-
 	private FileOutputStream fileOut;
 	private PrintStream fileStream;
-
 	// Declarations to be included in constructor <clinit>
 	private ArrayList<Declaration> initArrays;
-
 	private int stacklimit;
 	private int stackval;
-
 	private int localsval;
-	private int label;
-
 	private boolean hasGlobalAttrs;
 
-	public CodeGenerator(File inputFile, ASTModule root, SymbolTable st) {
+	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
 		String outFileName = inputFile.getName().split("\\.")[0] + ".j";
 
@@ -34,15 +26,11 @@ public class CodeGenerator {
 		try{
 			fileOut = new FileOutputStream(file);
 		}
-		catch(IOException e){
-			System.out.println("Failed to create output stream");
-			System.exit(-1);
-		}
+		catch(IOException e){}
 		fileStream = new PrintStream(this.fileOut);
 		this.st = st;
 		this.root = root;
 		initArrays = new ArrayList<Declaration>();
-		label = 0;
 		hasGlobalAttrs = false;
 	}
 
@@ -60,41 +48,47 @@ public class CodeGenerator {
 		fileOut.close();
 	}
 
-	private void generateGlobals(ASTModule node) throws IOException {
+	private void generateGlobals(SimpleNode node) throws IOException {
 		int children = node.jjtGetNumChildren();
 
+		SimpleNode child;
 		for(int i=0; i< children; i++)
 		{
-			if(node.jjtGetChild(i) instanceof ASTDeclaration)
+			child = (SimpleNode) node.jjtGetChild(i);
+
+			if(child.getId() == YalTreeConstants.JJTDECLARATION)
 			{
-				generateDeclaration((ASTDeclaration)node.jjtGetChild(i));
+				generateDeclaration(child);
 				hasGlobalAttrs=true;
 			}
 		}
 
 	}
 
-	private void generateFunctions(ASTModule node) throws IOException{
+	private void generateFunctions(SimpleNode node) throws IOException{
 		int children = node.jjtGetNumChildren();
 
+		SimpleNode child;
 		for(int i=0; i< children; i++)
 		{
-			if(node.jjtGetChild(i) instanceof ASTFunction)
+			child = (SimpleNode) node.jjtGetChild(i);
+
+			if(child.getId() == YalTreeConstants.JJTFUNCTION)
 			{
-				generateFunction((ASTFunction)node.jjtGetChild(i));
+				generateFunction(child);
 				fileStream.println();
 			}
 		}
 	}
 
-	private void generateDeclaration(ASTDeclaration node) throws IOException {
+	private void generateDeclaration(SimpleNode node) throws IOException {
 
 		SimpleNode lhs = (SimpleNode)node.jjtGetChild(0);
 		String name = lhs.getValue();
 
 		Declaration var;
 
-		//tira os "[]" do nome caso existam
+		//detetar array (identificado por []) e, se for o caso, extrair o seu nome
 		if(name.indexOf("[]")!=-1)
 		{
 			name = name.substring(0, name.indexOf("["));
@@ -126,7 +120,7 @@ public class CodeGenerator {
 
 	}
 
-	private void generateFunction(ASTFunction node) throws IOException {
+	private void generateFunction(SimpleNode node) throws IOException {
 		String name = node.getValue();
 		if (name.indexOf(".")!=-1) {
 			name = name.substring(name.indexOf(".")+1);
@@ -181,11 +175,13 @@ public class CodeGenerator {
 
 		fileStream.println();
 
+		SimpleNode child;
 		for(int i=0; i< node.jjtGetNumChildren(); i++)
 		{
-			if(node.jjtGetChild(i) instanceof ASTStmtlst)
+			child = (SimpleNode) node.jjtGetChild(i);
+			if(child.getId() == YalTreeConstants.JJTSTMTLST)
 			{
-				generateStmtlst((ASTStmtlst)node.jjtGetChild(i));
+				generateStmtlst(child);
 			}
 		}
 
@@ -213,40 +209,42 @@ public class CodeGenerator {
 		fileOut.getChannel().position(tmp);
 	}
 
-	private void generateStmtlst(ASTStmtlst node) throws IOException {
+	private void generateStmtlst(SimpleNode node) throws IOException {
+
+		SimpleNode child;
 		for(int i=0; i< node.jjtGetNumChildren(); i++)
 		{
-			if(node.jjtGetChild(i) instanceof ASTAssign)
+			child = (SimpleNode) node.jjtGetChild(i);
+
+			if(child.getId() == YalTreeConstants.JJTASSIGN)
 			{
+
 				System.out.println("Generating assign...");
-				generateAssign((ASTAssign)node.jjtGetChild(i));
+				generateAssign(child);
 				fileStream.println();
 			}
-
-			if(node.jjtGetChild(i) instanceof ASTCall)
+			if(child.getId() == YalTreeConstants.JJTCALL)
 			{
 				System.out.println("Generating call...");
-				generateCall((ASTCall)node.jjtGetChild(i));
+				generateCall(child);
 				fileStream.println();
 			}
-
-			if(node.jjtGetChild(i) instanceof ASTIf)
+			if(child.getId() == YalTreeConstants.JJTIF)
 			{
 				System.out.println("Generating if...");
-				generateIf((ASTIf)node.jjtGetChild(i));
+				generateIf(child);
 				fileStream.println();
 			}
-
-			if(node.jjtGetChild(i) instanceof ASTWhile)
+			if(child.getId() == YalTreeConstants.JJTWHILE)
 			{
 				System.out.println("Generating while...");
-				generateWhile((ASTWhile)node.jjtGetChild(i));
+				generateWhile(child);
 				fileStream.println();
 			}
 		}
 	}
 
-	private void generateCall(ASTCall node) throws IOException{
+	private void generateCall(SimpleNode node) throws IOException{
 		String mod = "";
 		String func = "";
 		String params = "";
@@ -266,7 +264,7 @@ public class CodeGenerator {
 		}
 
 		if(node.jjtGetNumChildren() != 0){
-			params = generateArgumentList((ASTVarlist) node.jjtGetChild(0));
+			params = generateArgList((SimpleNode) node.jjtGetChild(0));
 			nparam = node.jjtGetChild(0).jjtGetNumChildren();
 		}
 		else
@@ -294,7 +292,7 @@ public class CodeGenerator {
 		updateStack(-nparam);
 	}
 
-	public String generateArgumentList(ASTVarlist node){
+	public String generateArgList(SimpleNode node){
 		String ret = "(";
 
 		SimpleNode arg;
@@ -328,7 +326,7 @@ public class CodeGenerator {
 		return ret;
 	}
 
-	private void generateAccess(ASTAccess node){
+	private void generateAccess(SimpleNode node){
 		String name = node.getValue();
 		boolean sizeAccess = false;
 
@@ -389,9 +387,9 @@ public class CodeGenerator {
 		return var;
 	}
 
-	private void generateArraySize(ASTArraySize node){
+	private void generateArraySize(SimpleNode node){
 		if(node.jjtGetNumChildren() > 0){
-			generateAccess((ASTAccess) node.jjtGetChild(0));
+			generateAccess((SimpleNode) node.jjtGetChild(0));
 		}
 		else{
 			String val = node.getValue();
@@ -401,27 +399,31 @@ public class CodeGenerator {
 		fileStream.println("newarray int");
 	}
 
-	private void generateAssign(ASTAssign node) throws IOException {
+	private void generateAssign(SimpleNode node) throws IOException {
 		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
+		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
-		if(rhs.jjtGetChild(0) instanceof ASTTerm){
-			generateTerm((ASTTerm)rhs.jjtGetChild(0));
+		if(term1.getId() == YalTreeConstants.JJTTERM){
+			generateTerm(term1);
 			if(children == 2){
-				generateTerm((ASTTerm)rhs.jjtGetChild(1));
-				fileStream.println(OpToString(rhs.getValue()));
+				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
+				generateTerm(term2);
+				fileStream.println(arithmeticOpToStr(rhs.getValue()));
 			}
 		}
-		else if(rhs.jjtGetChild(0) instanceof ASTArraySize){
-			generateArraySize((ASTArraySize)rhs.jjtGetChild(0));
+		else
+
+		if(term1.getId() == YalTreeConstants.JJTARRAYSIZE){
+			generateArraySize(term1);
 		}
 
 		storeVar(lhs);
 	}
 
-	private void generateTerm(ASTTerm node) throws IOException {
+	private void generateTerm(SimpleNode node) throws IOException {
 		String parts = node.getValue();
 		String op = "";
 		String value = "";
@@ -434,11 +436,15 @@ public class CodeGenerator {
 		}
 
 		if(node.jjtGetNumChildren() == 1){
-			if(node.jjtGetChild(0) instanceof ASTAccess){
-				generateAccess((ASTAccess)node.jjtGetChild(0));
+			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
+
+			if(child.getId() == YalTreeConstants.JJTACCESS){
+				generateAccess(child);
 			}
-			else if(node.jjtGetChild(0) instanceof ASTCall){
-				generateCall((ASTCall)node.jjtGetChild(0));
+			else
+
+			if(child.getId() == YalTreeConstants.JJTCALL){
+				generateCall(child);
 			}
 		}
 		else{
@@ -449,33 +455,35 @@ public class CodeGenerator {
 			fileStream.println("ineg");
 	}
 
-	private void generateExprtest(ASTExprtest node) throws IOException {
-		generateAccess((ASTAccess) node.jjtGetChild(0));
+	private void generateExprtest(SimpleNode node) throws IOException {
+		generateAccess((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
+		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
-		if(rhs.jjtGetChild(0) instanceof ASTTerm){
-			generateTerm((ASTTerm)rhs.jjtGetChild(0));
+		if(term1.getId() == YalTreeConstants.JJTTERM){
+			generateTerm(term1);
 			if(children == 2){
-				generateTerm((ASTTerm)rhs.jjtGetChild(1));
-				fileStream.println(OpToString(rhs.getValue()));
+				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
+				generateTerm(term2);
+				fileStream.println(arithmeticOpToStr(rhs.getValue()));
 			}
 		}
 
-		fileStream.println(cmpOpToString(node.getValue()));
+		fileStream.println(comparisonOpToStr(node.getValue()));
 	}
 
-	private void generateIf(ASTIf node) throws IOException {
-		generateExprtest((ASTExprtest) node.jjtGetChild(0));
+	private void generateIf(SimpleNode node) throws IOException {
+		generateExprtest((SimpleNode) node.jjtGetChild(0));
 		fileStream.println();
-		generateStmtlst((ASTStmtlst) node.jjtGetChild(1));
+		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
 
-	private void generateWhile(ASTWhile node) throws IOException {
-		generateExprtest((ASTExprtest) node.jjtGetChild(0));
+	private void generateWhile(SimpleNode node) throws IOException {
+		generateExprtest((SimpleNode) node.jjtGetChild(0));
 		fileStream.println();
-		generateStmtlst((ASTStmtlst) node.jjtGetChild(1));
+		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 	}
 
 	private void storeVar(Declaration var){
@@ -579,73 +587,74 @@ public class CodeGenerator {
 		updateStack(1);
 	}
 
-	public String OpToString(String op){
-		String res = "";
-		switch(op) {
-			case "+":
-				res = "iadd";
-				break;
-			case "-":
-				res = "isub";
-				break;
-			case "*":
-				res = "imul";
-				break;
-			case "/":
-				res = "idiv";
-				break;
-			case "<<":
-				res = "ishl";
-				break;
-			case ">>":
-				res = "ishr";
-				break;
-			case "&":
-				res = "iand";
-				break;
-			case "|":
-				res = "ior";
-				break;
-			default:
-				break;
-		}
-		updateStack(-1);
-		return res;
-	}
-
-	// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
-	// ex: se condicao if(a > b) o salto sera feito quando a <= b
-	public String cmpOpToString(String op){
-		String res = "";
-		switch(op) {
-			case "==":
-				res = "if_icmpne";
-				break;
-			case "!=":
-				res = "if_icmpeq";
-				break;
-			case "<=":
-				res = "if_icmpgt";
-				break;
-			case ">=":
-				res = "if_icmplt";
-				break;
-			case ">":
-				res = "if_cmple";
-				break;
-			case "<":
-				res = "if_icmpge";
-				break;
-			default:
-				break;
+		public String arithmeticOpToStr(String op){
+			String res = "";
+			switch(op) {
+				case "+":
+					res = "iadd";
+					break;
+				case "-":
+					res = "isub";
+					break;
+				case "*":
+					res = "imul";
+					break;
+				case "/":
+					res = "idiv";
+					break;
+				case "<<":
+					res = "ishl";
+					break;
+				case ">>":
+					res = "ishr";
+					break;
+				case "&":
+					res = "iand";
+					break;
+				case "|":
+					res = "ior";
+					break;
+				default:
+					break;
+			}
+			updateStack(-1);
+			return res;
 		}
 
-		updateStack(-2);
-		return res;
+		public String comparisonOpToStr(String op){
+			String res = "";
+			// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
+			// ex: se condicao if(a > b) o salto sera feito quando a <= b
+			switch(op) {
+				case "==":
+					res = "if_icmpne";
+					break;
+				case "!=":
+					res = "if_icmpeq";
+					break;
+				case "<=":
+					res = "if_icmpgt";
+					break;
+				case ">=":
+					res = "if_icmplt";
+					break;
+				case ">":
+					res = "if_cmple";
+					break;
+				case "<":
+					res = "if_icmpge";
+					break;
+				default:
+					break;
+			}
+
+			updateStack(-2);
+			return res;
 	}
 
 	private void updateStack(int factor){
-		stackval = (stackval + factor < 0 ? 0 : stackval + factor);
+		stackval = stackval + factor;
+		if(stackval < 0) stackval = 0;
 		if(stackval > stacklimit) stacklimit = stackval;
 	}
 

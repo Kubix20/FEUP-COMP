@@ -72,7 +72,7 @@ public class SymbolTable{
 		return var;
 	}
 
-	public void analyseAssign(ASTAssign node){
+	public void analyseAssign(SimpleNode node){
 		int line = node.getLine();
 		Declaration lhs = analyseAccessAssign((SimpleNode) node.jjtGetChild(0));
 
@@ -83,16 +83,17 @@ public class SymbolTable{
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
+		SimpleNode child = (SimpleNode) rhs.jjtGetChild(0);
 
-		if(rhs.jjtGetChild(0) instanceof ASTTerm){
+		if( child.getId() == YalTreeConstants.JJTTERM ){
 			System.out.println("Term");
 			String rhsType;
-			String type1 = analyseTerm((ASTTerm)rhs.jjtGetChild(0));
+			String type1 = analyseTerm(child);
 			rhsType = type1;
 			String type2 = "";
 			if(children == 2){
 				System.out.println("2nd Term");
-				type2 = analyseTerm((ASTTerm)rhs.jjtGetChild(1));
+				type2 = analyseTerm((SimpleNode) rhs.jjtGetChild(1));
 
 				if(type2.compareTo("undefined") != 0){
 					if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
@@ -123,10 +124,12 @@ public class SymbolTable{
 				}
 			}
 		}
-		else if(rhs.jjtGetChild(0) instanceof ASTArraySize){
+		else
+
+		if(	child.getId() == YalTreeConstants.JJTARRAYSIZE ){
 			System.out.println("ArraySize");
 
-			if(!analyseArraySize((ASTArraySize)rhs.jjtGetChild(0)))
+			if(!analyseArraySize(child))
 				return;
 
 
@@ -145,7 +148,7 @@ public class SymbolTable{
 		}
 	}
 
-	public Declaration analyseCall(ASTCall node){
+	public Declaration analyseCall(SimpleNode node){
 		int line = node.getLine();
 		String name = node.getValue();
 		String moduleName = "";
@@ -228,7 +231,7 @@ public class SymbolTable{
 		return ret;
 	}
 
-	public String analyseTerm(ASTTerm node){
+	public String analyseTerm(SimpleNode node){
 		int line = node.getLine();
 
 		String parts = node.getValue();
@@ -248,10 +251,11 @@ public class SymbolTable{
 		System.out.println("Term value: "+value);
 
 		if(node.jjtGetNumChildren() == 1) {
+			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
 			Declaration var;
 
-			if(node.jjtGetChild(0) instanceof ASTAccess){
-				var = analyseAccess((ASTAccess)node.jjtGetChild(0));
+			if( child.getId() == YalTreeConstants.JJTACCESS ){
+				var = analyseAccess(child);
 
 				if(var != null){
 
@@ -271,8 +275,8 @@ public class SymbolTable{
 				}
 			}
 
-			if(node.jjtGetChild(0) instanceof ASTCall){
-				var = analyseCall((ASTCall)node.jjtGetChild(0));
+			if( child.getId() == YalTreeConstants.JJTCALL ){
+				var = analyseCall(child);
 
 				if(var != null){
 					if(var.isArray() && op.compareTo("")!=0){
@@ -292,9 +296,9 @@ public class SymbolTable{
 		return "undefined";
 	}
 
-	public boolean analyseArraySize(ASTArraySize node){
+	public boolean analyseArraySize(SimpleNode node){
 		if(node.jjtGetNumChildren() > 0){
-			Declaration access = analyseAccess((ASTAccess) node.jjtGetChild(0));
+			Declaration access = analyseAccess((SimpleNode) node.jjtGetChild(0));
 
 			if(access == null)
 				return false;
@@ -313,6 +317,7 @@ public class SymbolTable{
 			logError(line,"Invalid access to size of variable "+name);
 			return null;
 		}
+
 
 		Declaration var = lookupVariableAssign(name);
 
@@ -366,7 +371,7 @@ public class SymbolTable{
 		return var;
 	}
 
-	public Declaration analyseAccess(ASTAccess node){
+	public Declaration analyseAccess(SimpleNode node){
 		int line = node.getLine();
 		String name = node.getValue();
 
@@ -375,7 +380,6 @@ public class SymbolTable{
 			name = name.substring(0, name.indexOf("."));
 			sizeAccess = true;
 		}
-
 
 		Declaration var = lookupVariable(name);
 		if(var == null){
@@ -443,9 +447,9 @@ public class SymbolTable{
 		return var;
 	}
 
-	public void analyseExprtest(ASTExprtest node){
+	public void analyseExprtest(SimpleNode node){
 		int line = node.getLine();
-		Declaration lhs = analyseAccess((ASTAccess) node.jjtGetChild(0));
+		Declaration lhs = analyseAccess((SimpleNode) node.jjtGetChild(0));
 
 		if(lhs == null)
 			return;
@@ -454,16 +458,17 @@ public class SymbolTable{
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
+		SimpleNode child = (SimpleNode) rhs.jjtGetChild(0);
 
-		if(rhs.jjtGetChild(0) instanceof ASTTerm){
+		if( child.getId() == YalTreeConstants.JJTTERM ){
 			System.out.println("Term");
 			String rhsType;
-			String type1 = analyseTerm((ASTTerm)rhs.jjtGetChild(0));
+			String type1 = analyseTerm(child);
 			rhsType = type1;
 			String type2 = "";
 			if(children == 2){
 				System.out.println("2nd Term");
-				type2 = analyseTerm((ASTTerm) rhs.jjtGetChild(1));
+				type2 = analyseTerm((SimpleNode) rhs.jjtGetChild(1));
 
 				if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
 					logError(line,"Incompatible types for arithmetic expression: "+type1+" and "+type2);
@@ -474,17 +479,19 @@ public class SymbolTable{
 			if(lhsType.compareTo("integer") != 0 || rhsType.compareTo("integer") != 0)
 				logError(line,"Incomparable types "+lhsType+" and "+rhsType);
 		}
-		else if(rhs.jjtGetChild(0) instanceof ASTArraySize){
+		else
+
+		if(	child.getId() == YalTreeConstants.JJTARRAYSIZE ){
 			logError(line,"Unable to compare to array size declaration");
 		}
 	}
 
-	public void analyseIf(ASTIf node){
+	public void analyseIf(SimpleNode node){
 		currFunction.ifScopeDeclarations.add(new ArrayList<Declaration>());
 		int children = node.jjtGetNumChildren();
 
-		analyseExprtest((ASTExprtest) node.jjtGetChild(0));
-		analyseStmtlst((ASTStmtlst) node.jjtGetChild(1));
+		analyseExprtest((SimpleNode) node.jjtGetChild(0));
+		analyseStmtlst((SimpleNode) node.jjtGetChild(1));
 
 		//else clause
 		if(children > 2){
@@ -498,7 +505,7 @@ public class SymbolTable{
 			}
 			currFunction.deleteCurrIfScopeDeclarations();
 
-			analyseStmtlst((ASTStmtlst) node.jjtGetChild(2));
+			analyseStmtlst((SimpleNode) node.jjtGetChild(2));
 			ArrayList<Declaration> elseScope = currFunction.getCurrIfScope();
 			System.out.println("elseScope size: "+elseScope.size());
 
@@ -550,27 +557,30 @@ public class SymbolTable{
 		currFunction.ifScopeDeclarations.remove(currFunction.ifScopeDeclarations.size()-1);
 	}
 
-	public void analyseStmtlst(ASTStmtlst node){
+	public void analyseStmtlst(SimpleNode node){
+		SimpleNode child;
 		for(int i = 0; i < node.jjtGetNumChildren();i++){
-			if(node.jjtGetChild(i) instanceof ASTWhile){
+			child = (SimpleNode) node.jjtGetChild(i);
+
+			if(child.getId() == YalTreeConstants.JJTWHILE ){
 				System.out.println("While");
-				analyseExprtest((ASTExprtest) node.jjtGetChild(i).jjtGetChild(0));
-				analyseStmtlst((ASTStmtlst) node.jjtGetChild(i).jjtGetChild(1));
+				analyseExprtest((SimpleNode) child.jjtGetChild(0));
+				analyseStmtlst((SimpleNode) child.jjtGetChild(1));
 			}
 
-			if(node.jjtGetChild(i) instanceof ASTIf){
+			if(child.getId() == YalTreeConstants.JJTIF ){
 				System.out.println("If");
-				analyseIf((ASTIf)node.jjtGetChild(i));
+				analyseIf(child);
 			}
 
-			if(node.jjtGetChild(i) instanceof ASTAssign){
+			if(child.getId() == YalTreeConstants.JJTASSIGN ){
 				System.out.println("Assign");
-				analyseAssign((ASTAssign)node.jjtGetChild(i));
+				analyseAssign(child);
 			}
 
-			if(node.jjtGetChild(i) instanceof ASTCall){
+			if(child.getId() == YalTreeConstants.JJTCALL ){
 				System.out.println("Call");
-				analyseCall((ASTCall)node.jjtGetChild(i));
+				analyseCall(child);
 			}
 		}
 	}
@@ -589,10 +599,13 @@ public class SymbolTable{
 
 		currFunction = functions.get(functionName);
 
+		SimpleNode child;
 		for(int i = 0; i < children;i++){
-			if(node.jjtGetChild(i) instanceof ASTStmtlst){
+			child = (SimpleNode) node.jjtGetChild(i);
+
+			if(child.getId() == YalTreeConstants.JJTSTMTLST){
 				System.out.println("Stmtlst");
-				analyseStmtlst((ASTStmtlst)node.jjtGetChild(i));
+				analyseStmtlst(child);
 				break;
 			}
 		}
@@ -603,7 +616,7 @@ public class SymbolTable{
 		}
 	}
 
-	public void analyseFunction(ASTFunction node){
+	public void analyseFunction(SimpleNode node){
 		int line = node.getLine();
 		String functionName = node.getValue();
 		String returnName="";
@@ -621,9 +634,8 @@ public class SymbolTable{
 			return;
 		}
 
-		if (node.jjtGetChild(currChild) instanceof ASTElement ) {
+		if ( ((SimpleNode) node.jjtGetChild(currChild)).getId() == YalTreeConstants.JJTELEMENT ) {
 
-			// main() returns void and has no parameters
 			if(functionName.compareTo("main")==0){
 				logError(line,"Function main must return void");
 			}
@@ -643,15 +655,13 @@ public class SymbolTable{
 
 		Function function = new Function(functionName, returnName, returnType);
 
-		// verificacao de parametros, caso existam
-		if (node.jjtGetChild(currChild) instanceof ASTVarlist ) {
-
+		//parsing de argumentos, caso existam
+		if ( ((SimpleNode) node.jjtGetChild(currChild)).getId() == YalTreeConstants.JJTVARLIST ) {
+			//main nao tem argumentos
 			if(functionName.compareTo("main")==0){
 				logError(line,"Function main cannot have any arguments");
 			}
 			else{
-
-				//parse parameters
 				for (int i=0; i<node.jjtGetChild(currChild).jjtGetNumChildren();i++) {
 					String paramName = ((SimpleNode) node.jjtGetChild(currChild).jjtGetChild(i)).getValue();
 					String paramType="integer";
@@ -662,7 +672,6 @@ public class SymbolTable{
 						paramType="array";
 					}
 
-					//adiciona apenas se ja nao tiver
 					if ( (!function.parameters.containsKey(paramName)) ){
 						function.addParameter(paramName,paramType);
 					}
@@ -676,7 +685,7 @@ public class SymbolTable{
 		functions.put(functionName, function);
 	}
 
-	public void analyseDeclaration(ASTDeclaration node){
+	public void analyseDeclaration(SimpleNode node){
 		int line = node.getLine();
 
 		int children = node.jjtGetNumChildren();
@@ -704,16 +713,17 @@ public class SymbolTable{
 		if(children > 1){
 
 			String rhsType = "undefined";
-			if(node.jjtGetChild(1) instanceof ASTArraySize){
+			SimpleNode child = (SimpleNode) node.jjtGetChild(1);
+			if(child.getId() == YalTreeConstants.JJTARRAYSIZE){
 				System.out.println("ArraySize");
 
-				if(!analyseArraySize((ASTArraySize)node.jjtGetChild(1)))
+				if(!analyseArraySize(child))
 					return;
 
 				rhsType = "array";
 			}
 
-			if(node.jjtGetChild(1) instanceof ASTIntElement){
+			if(child.getId() == YalTreeConstants.JJTINTELEMENT){
 				System.out.println("IntElement");
 				rhsType = "integer";
 			}
@@ -739,35 +749,44 @@ public class SymbolTable{
 		}
 	}
 
-	private void declareGlobals(ASTModule root){
+	private void declareGlobals(SimpleNode root){
+		SimpleNode node;
 		for(int i=0; i< root.jjtGetNumChildren(); i++)
 		{
-			if(root.jjtGetChild(i) instanceof ASTDeclaration)
-			{
-				analyseDeclaration((ASTDeclaration)root.jjtGetChild(i));
-			}
+			node = (SimpleNode) root.jjtGetChild(i);
 
-			else if(root.jjtGetChild(i) instanceof ASTFunction)
+			if(node.getId() == YalTreeConstants.JJTDECLARATION)
+			{
+				analyseDeclaration(node);
+			} else
+
+			if(node.getId() == YalTreeConstants.JJTFUNCTION)
 			{
 				System.out.println("Function");
-				analyseFunction((ASTFunction)root.jjtGetChild(i));
+				analyseFunction(node);
 			}
 		}
 	}
 
-	private void analyseFunctions(ASTModule root){
+	private void analyseFunctions(SimpleNode root){
+		SimpleNode node;
 		for(int i=0; i< root.jjtGetNumChildren(); i++)
 		{
-			if(root.jjtGetChild(i) instanceof ASTFunction);
+			node = ((SimpleNode) root.jjtGetChild(i));
+
+			if(node.getId() == YalTreeConstants.JJTFUNCTION)
 			{
 				System.out.println("Function body");
-				analyseFunctionBody((ASTFunction)root.jjtGetChild(i));
+				analyseFunctionBody(node);
 			}
 		}
 	}
 
-	public void analyse(ASTModule root){
-		module = root.getValue();
+	public void analyse(SimpleNode root){
+
+		if(root.getId() == YalTreeConstants.JJTMODULE){
+			module = root.getValue();
+		}
 
 		declareGlobals(root);
 		analyseFunctions(root);
