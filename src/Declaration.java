@@ -3,7 +3,7 @@ public class Declaration {
 	
 	public String name;
 	public String type;
-	public String access;
+	public String access = "";
 	public String ifStatus = "";
 	public boolean global;
 	public boolean init;

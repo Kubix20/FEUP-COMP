@@ -258,7 +258,6 @@ public class CodeGenerator {
 			func = name.substring(dotIndex+1,name.length());
 		}
 		else{
-			//TODO: REVER ISTO NA SEMANTICA
 			func = name;
 			mod = st.module;
 		}
@@ -277,7 +276,7 @@ public class CodeGenerator {
 				ret = "I";
 		}
 		else if(mod.compareTo(st.module) == 0){
-
+			
 			if(st.functions.get(func).ret.isInt())
 				ret = "I";
 			else if(st.functions.get(func).ret.isArray())
