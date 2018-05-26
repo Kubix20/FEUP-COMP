@@ -15,6 +15,7 @@ java Yal Programs/aval8.yal
 java Yal Programs/library1.yal
 java Yal Programs/max.yal
 java Yal Programs/max1.yal
+java Yal Programs/nested-branch.yal
 java Yal Programs/maxmin.yal
 java Yal Programs/programa1.yal
 java Yal Programs/programa2.yal

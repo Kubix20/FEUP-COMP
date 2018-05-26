@@ -16,6 +16,8 @@ public class CodeGenerator {
 	private int stacklimit;
 	private int stackval;
 	private int localsval;
+	private int loopLabelNr;
+	private int ifLabelNr;
 	private boolean hasGlobalAttrs;
 
 	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
@@ -30,6 +32,8 @@ public class CodeGenerator {
 		fileStream = new PrintStream(this.fileOut);
 		this.st = st;
 		this.root = root;
+		this.loopLabelNr = 0;
+		this.ifLabelNr = 0;
 		initArrays = new ArrayList<Declaration>();
 		hasGlobalAttrs = false;
 	}
@@ -344,7 +348,7 @@ public class CodeGenerator {
 			}
 			else{
 				Declaration index = lookupVar(indexName);
-				loadVar(var);
+				loadVar(index);
 			}
 
 			fileStream.println("iaload");
@@ -374,7 +378,7 @@ public class CodeGenerator {
 				}
 				else{
 					Declaration index = lookupVar(indexName);
-					loadVar(var);
+					loadVar(index);
 				}
 
 				var.access="integer";
@@ -454,7 +458,7 @@ public class CodeGenerator {
 			fileStream.println("ineg");
 	}
 
-	private void generateExprtest(SimpleNode node) throws IOException {
+	private void generateExprtest(SimpleNode node, String label) throws IOException {
 		generateAccess((SimpleNode) node.jjtGetChild(0));
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
@@ -470,26 +474,72 @@ public class CodeGenerator {
 			}
 		}
 
-		fileStream.println(comparisonOpToStr(node.getValue()));
+		fileStream.print(comparisonOpToStr(node.getValue()));
+		fileStream.println(" "+label);
 	}
 
 	private void generateIf(SimpleNode node) throws IOException {
-		generateExprtest((SimpleNode) node.jjtGetChild(0));
+		int children = node.jjtGetNumChildren();
+		int labelNr = this.ifLabelNr;
+		this.ifLabelNr++;
+		
+		String elseLabel = "else"+labelNr;
+		String ifLabelEnd = "if"+labelNr+"_end";
+		String exprLabel = ifLabelEnd;
+		
+		if(children > 2) 
+			exprLabel = elseLabel;
+			
+		generateExprtest((SimpleNode) node.jjtGetChild(0),exprLabel);
 		fileStream.println();
 		generateStmtlst((SimpleNode) node.jjtGetChild(1));
+		
+		//else clause
+		if(children > 2){
+			fileStream.println("goto "+ifLabelEnd);
+			fileStream.println();
+			fileStream.println(elseLabel+":");
+			generateStmtlst((SimpleNode) node.jjtGetChild(2));
+		}
+		
+		fileStream.println();
+		fileStream.println(ifLabelEnd+":");
+		fileStream.println();
 	}
 
 	private void generateWhile(SimpleNode node) throws IOException {
-		generateExprtest((SimpleNode) node.jjtGetChild(0));
+		int labelNr = this.loopLabelNr;
+		this.loopLabelNr++;
+		
+		String loopLabel = "loop"+labelNr;
+		String loopLabelEnd = "loop"+labelNr+"_end";
+		
+		fileStream.println(loopLabel+":");
 		fileStream.println();
+		
+		generateExprtest((SimpleNode) node.jjtGetChild(0),loopLabelEnd);
+		
+		fileStream.println();
+		
 		generateStmtlst((SimpleNode) node.jjtGetChild(1));
+		fileStream.println("goto "+loopLabel);
+		
+		fileStream.println();
+		fileStream.println(loopLabelEnd+":");
+		fileStream.println();
 	}
 
 	private void storeVar(Declaration var){
-		if(var.global)
-			storeGlobal(var);
-		else
-			storeLocal(var);
+		if(var.isArray() && var.intAccess()){
+			fileStream.println("iastore");
+			updateStack(-2);
+		}
+		else{
+			if(var.global)
+				storeGlobal(var);
+			else
+				storeLocal(var);
+		}
 	}
 
 	private void storeLocal(Declaration var){
@@ -524,16 +574,10 @@ public class CodeGenerator {
 	}
 
 	private void loadVar(Declaration var){
-		if(var.isArray() && var.intAccess()){
-			fileStream.println("iastore");
-			updateStack(-3);
-		}
-		else{
-			if(var.global)
-				loadGlobal(var);
-			else
-				loadLocal(var);
-		}
+		if(var.global)
+			loadGlobal(var);
+		else
+			loadLocal(var);
 	}
 
 	private void loadLocal(Declaration var){
@@ -586,69 +630,69 @@ public class CodeGenerator {
 		updateStack(1);
 	}
 
-		public String arithmeticOpToStr(String op){
-			String res = "";
-			switch(op) {
-				case "+":
-					res = "iadd";
-					break;
-				case "-":
-					res = "isub";
-					break;
-				case "*":
-					res = "imul";
-					break;
-				case "/":
-					res = "idiv";
-					break;
-				case "<<":
-					res = "ishl";
-					break;
-				case ">>":
-					res = "ishr";
-					break;
-				case "&":
-					res = "iand";
-					break;
-				case "|":
-					res = "ior";
-					break;
-				default:
-					break;
-			}
-			updateStack(-1);
-			return res;
+	public String arithmeticOpToStr(String op){
+		String res = "";
+		switch(op) {
+			case "+":
+				res = "iadd";
+				break;
+			case "-":
+				res = "isub";
+				break;
+			case "*":
+				res = "imul";
+				break;
+			case "/":
+				res = "idiv";
+				break;
+			case "<<":
+				res = "ishl";
+				break;
+			case ">>":
+				res = "ishr";
+				break;
+			case "&":
+				res = "iand";
+				break;
+			case "|":
+				res = "ior";
+				break;
+			default:
+				break;
+		}
+		updateStack(-1);
+		return res;
+	}
+
+	public String comparisonOpToStr(String op){
+		String res = "";
+		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
+		// ex: se condicao if(a > b) o salto sera feito quando a <= b
+		switch(op) {
+			case "==":
+				res = "if_icmpne";
+				break;
+			case "!=":
+				res = "if_icmpeq";
+				break;
+			case "<=":
+				res = "if_icmpgt";
+				break;
+			case ">=":
+				res = "if_icmplt";
+				break;
+			case ">":
+				res = "if_cmple";
+				break;
+			case "<":
+				res = "if_icmpge";
+				break;
+			default:
+				break;
 		}
 
-		public String comparisonOpToStr(String op){
-			String res = "";
-			// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
-			// ex: se condicao if(a > b) o salto sera feito quando a <= b
-			switch(op) {
-				case "==":
-					res = "if_icmpne";
-					break;
-				case "!=":
-					res = "if_icmpeq";
-					break;
-				case "<=":
-					res = "if_icmpgt";
-					break;
-				case ">=":
-					res = "if_icmplt";
-					break;
-				case ">":
-					res = "if_cmple";
-					break;
-				case "<":
-					res = "if_icmpge";
-					break;
-				default:
-					break;
-			}
-
-			updateStack(-2);
-			return res;
+		updateStack(-2);
+		return res;
 	}
 
 	private void updateStack(int factor){
