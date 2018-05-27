@@ -12,7 +12,7 @@ java Yal Programs/aval5.yal
 java Yal Programs/aval6.yal
 java Yal Programs/aval7.yal
 java Yal Programs/aval8.yal
-java Yal Programs/call_main.yal
+java Yal Programs/call-main.yal
 java Yal Programs/constant-ranges.yal
 java Yal Programs/erro_prof.yal
 java Yal Programs/library1.yal

@@ -18,6 +18,7 @@ public class CodeGenerator {
 	private int loopLabelNr;
 	private int ifLabelNr;
 	private boolean hasGlobalAttrs;
+	private boolean hasGlobalAttrsAssigns;
 
 	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
@@ -34,6 +35,7 @@ public class CodeGenerator {
 		this.loopLabelNr = 0;
 		this.ifLabelNr = 0;
 		hasGlobalAttrs = false;
+		hasGlobalAttrsAssigns = false;
 	}
 
 	public void generate() throws IOException {
@@ -41,10 +43,11 @@ public class CodeGenerator {
 		fileStream.println(".super java/lang/Object"+System.lineSeparator());
 
 		generateGlobals(root);
-		if(hasGlobalAttrs){
+		if(hasGlobalAttrs)
 			fileStream.println();
+		
+		if(hasGlobalAttrsAssigns)
 			generateClinit(root);
-		}
 		
 		generateFunctions(root);
 
@@ -70,7 +73,10 @@ public class CodeGenerator {
 	}
 	
 	private void declareGlobal(SimpleNode node) throws IOException {
-
+		int children = node.jjtGetNumChildren();
+		if(children > 1)
+			hasGlobalAttrsAssigns = true;
+		
 		SimpleNode lhs = (SimpleNode)node.jjtGetChild(0);
 		String name = lhs.getValue();
 
