@@ -8,7 +8,6 @@ public class Declaration {
 	public boolean global;
 	public boolean init;
 	public int value;
-	public int values[];
 	public int size;
 	public int local;
 	
@@ -52,7 +51,7 @@ public class Declaration {
 			initArray();
 	}
 	
-	public void initArray (){
+	public void initArray(){
 		if(!init)
 		{
 			init = true;
@@ -60,12 +59,11 @@ public class Declaration {
 		}
 	}
 	
-	public void initArray (int size){
+	public void initArray(int size){
 		if(!init)
 		{
 			init = true;
 			this.size = size;
-			values = new int[size];
 			type = "array";
 		}
 	}
