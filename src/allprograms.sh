@@ -26,4 +26,4 @@ java Yal Programs/programa3.yal
 java Yal Programs/register-test.yal
 java Yal Programs/return.yal
 java Yal Programs/sqrt.yal
-java Yal Programs/if_test.yal
+java Yal Programs/stack-size.yal
