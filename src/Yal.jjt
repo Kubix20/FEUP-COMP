@@ -15,19 +15,25 @@ import java.io.FileNotFoundException;
 public class Yal {
   public static int nErrors = 0;
   public static final int ERROR_LIMIT = 5;
+
+  public static void printUsage() {
+    System.out.println("Usage: java Yal <file path> [TODO: Possible optimizing options]");
+  }
   public static void main(String args[]) throws ParseException, FileNotFoundException {
-	  
+
 	if(args.length != 1){
 		System.out.println("Wrong amount of arguments");
+    Yal.printUsage();
 		return;
 	}
-	
+
 	File inputFile = new File(args[0]);
 	if(!inputFile.exists() || !inputFile.isFile()){
 		System.out.println("Unable to find source file: "+inputFile);
+    Yal.printUsage();
 		return;
 	}
-	
+
 	String newline = System.lineSeparator();
 	System.out.println(newline+newline+
 					   "<<<<<<<< Parsing file "+ args[0]+ " >>>>>>>>>"+
@@ -40,7 +46,7 @@ public class Yal {
 		System.out.println("Program parsed with "+Yal.nErrors+" errors");
 		return;
 	}
-	
+
 	SymbolTable st = new SymbolTable();
 	st.analyse(root); //Semantic analysis
 	st.print();
@@ -49,7 +55,7 @@ public class Yal {
 		System.out.println("Program parsed with "+errors+" errors");
 		return;
 	}
-	
+
 	CodeGenerator cg = new CodeGenerator(inputFile,root,st);
 	try{
 		cg.generate();
@@ -58,7 +64,7 @@ public class Yal {
 		e.printStackTrace();
 		return;
 	}
-	
+
 	System.out.println("Program compiled successfully!");
   }
 }
@@ -103,7 +109,7 @@ PARSER_END(Yal)
 }
 JAVACODE
 void jjtreeOpenNodeScope(Node n){
-	((SimpleNode) n).setLine(getToken(1).beginLine); 
+	((SimpleNode) n).setLine(getToken(1).beginLine);
 }
 
 JAVACODE
@@ -224,7 +230,7 @@ void Element() #Element : {Token t1 = null, t2 = null, t3 = null;}
 void CmpStmtLst() : {}
 {
    <LCHAVETA> Stmtlst() <RCHAVETA>
-}   
+}
 
 void Stmtlst() #Stmtlst : {}
 {
@@ -235,13 +241,13 @@ void Stmt() : {}
 {
   try{
     LOOKAHEAD(3)
-  
-    While() | If()  
+
+    While() | If()
 
     |
-  
+
     LOOKAHEAD(3)
-  
+
     try{
       Assign()
     }
@@ -249,17 +255,17 @@ void Stmt() : {}
        int[] kinds = {PVIRG, LPAR};
 	   error_multskipto(e, kinds, "STATEMENT ASSIGN");
     }
-  
+
     |
-  
+
     (
 	  try{
-		  Call() 
+		  Call()
 	  }
 	  catch(ParseException e){
 		  error_skipto_lookahead(e, PVIRG, "FUNCTION CALL");
 	  }
-	
+
 	  try{
 	     <PVIRG>
 	  }
@@ -329,17 +335,17 @@ void While() #While : {}
 
 void If() #If : {}
 {
-  <IF> 
-  
+  <IF>
+
   try{
-    Exprtest() 
+    Exprtest()
   }
   catch(ParseException e){
 	error_skipto_lookahead(e, LCHAVETA, "IF");
   }
-  
+
   <LCHAVETA> Stmtlst() <RCHAVETA>
-  
+
   try{
 	  [<ELSE> <LCHAVETA> Stmtlst() <RCHAVETA>]
   }
@@ -352,7 +358,7 @@ void Call() #Call: {Token t1, t2=null;}
 {
   t1=<ID> ["." t2=<ID>] <LPAR>
   {jjtThis.setValues(t1.image, (t2 == null ? "": t2.image));}
-  
+
   try{
     [ArgumentList()] <RPAR>
   }
