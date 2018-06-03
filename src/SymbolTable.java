@@ -1,18 +1,21 @@
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class SymbolTable{
 
 	public String module;
 	public HashMap<String,Function> functions;
 	public Function currFunction;
-	public HashMap<String,Declaration> globalDeclarations;
+	public LinkedHashMap<String,Declaration> globalDeclarations;
 	public ArrayList<String> errors;
+	public ArrayList<String> warnings;
 
 	public SymbolTable(){
 		this.functions = new HashMap<String,Function>();
-		this.globalDeclarations = new HashMap<String,Declaration>();
+		this.globalDeclarations = new LinkedHashMap<String,Declaration>();
 		this.errors = new ArrayList<String>();
+		this.warnings = new ArrayList<String>();
 	}
 
 	public static boolean isInt(String i){
@@ -766,6 +769,15 @@ public class SymbolTable{
 				analyseFunction(node);
 			}
 		}
+		
+		Declaration dec;
+		for (String name : globalDeclarations.keySet()){
+			System.out.println(name);
+			dec = globalDeclarations.get(name);
+			System.out.println(dec);
+            if(!dec.init)
+				logWarning("Global variable "+dec.name+" might not have been initialized");
+		}
 	}
 
 	private void analyseFunctions(SimpleNode root){
@@ -822,19 +834,30 @@ public class SymbolTable{
 
 		return errors.size();
 	}
+	
+	public void printWarnings(){
+		String newLine = System.lineSeparator();
+		for(String warning : warnings)
+			System.out.println(warning+newLine);
+	}
 
+	private void logWarning(String msg){
+		//System.out.println("Warning: "+msg);
+		warnings.add("Warning: "+msg);
+	}
+	
 	private void logWarning(int line, String msg){
-		System.out.println("Warning on line " +line+": "+msg);
-		errors.add("Warning on line " +line+": "+msg);
+		//System.out.println("Warning on line " +line+": "+msg);
+		warnings.add("Warning on line " +line+": "+msg);
 	}
 
 	private void logError(String msg){
-		System.out.println("Error: "+msg);
+		//System.out.println("Error: "+msg);
 		errors.add("Error: "+msg);
 	}
 
 	private void logError(int line, String msg){
-		System.out.println("Error on line " +line+": "+msg);
+		//System.out.println("Error on line " +line+": "+msg);
 		errors.add("Error on line " +line+": "+msg);
 	}
 }

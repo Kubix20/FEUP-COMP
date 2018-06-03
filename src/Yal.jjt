@@ -55,6 +55,7 @@ public class Yal {
 		System.out.println("Program parsed with "+errors+" errors");
 		return;
 	}
+	st.printWarnings();
 
 	CodeGenerator cg = new CodeGenerator(inputFile,root,st);
 	try{
