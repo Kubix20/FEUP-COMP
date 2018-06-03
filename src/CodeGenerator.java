@@ -18,6 +18,8 @@ public class CodeGenerator {
 	private int ifLabelNr;
 	private boolean hasGlobalAttrs;
 	private boolean hasGlobalAttrsAssigns;
+	private Declaration counter;
+	private Declaration arrayValueAssignRhs;
 
 	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
@@ -105,6 +107,7 @@ public class CodeGenerator {
 	
 	public void generateDeclaration(SimpleNode node){
 		int children = node.jjtGetNumChildren();
+		boolean storeVar = true;
 		
 		if(children == 2){
 			
@@ -139,21 +142,34 @@ public class CodeGenerator {
 				
 				if(op.compareTo("-")==0)
 					value = op+value;
-				loadConst(Integer.parseInt(value));
+				
+				if(var.arrayAccess()){
+					storeVar = false;
+					generateArrayValueAssign(var,Integer.valueOf(value));
+				}
+				else
+					loadConst(Integer.parseInt(value));
 			}
 			
-			storeVar(var);
+			if(storeVar)
+				storeVar(var);
 		}
 	}
 	
 	public void generateClinit(SimpleNode node) throws IOException {
 		
-		fileStream.println(".method static public <clinit>()V");
-		fileStream.print(".limit stack    \n");
 		stacklimit = 0;
 		stackval = 0;
+		localsval = 0;
+		counter = null;
+		arrayValueAssignRhs = null;
+		
+		fileStream.println(".method static public <clinit>()V");
+		
+		fileStream.print(".limit locals    \n");
+		long localspos = fileOut.getChannel().position() - 4;
+		fileStream.print(".limit stack    \n");
 		long stackpos = fileOut.getChannel().position() - 4;
-		fileStream.print(".limit locals 0\n");
 		fileStream.println();
 		
 		int children = node.jjtGetNumChildren();
@@ -169,8 +185,10 @@ public class CodeGenerator {
 			}
 		}
 
-		//actualizar o limit stack no ficheiro
+		//actualizar o limit locals e limit stack no ficheiro
 		long tmp = fileOut.getChannel().position();
+		fileOut.getChannel().position(localspos);
+		fileStream.print(localsval);
 		fileOut.getChannel().position(stackpos);
 		fileStream.print(stacklimit);
 		fileOut.getChannel().position(tmp);
@@ -207,6 +225,8 @@ public class CodeGenerator {
 		stacklimit = 0;
 		stackval = 0;
 		localsval = 0;
+		counter = null;
+		arrayValueAssignRhs = null;
 
 		fileStream.print(".method public static " + name + "(");
 
@@ -278,10 +298,10 @@ public class CodeGenerator {
 
 		//escrever o limit stack e limit locals, no inicio da funcao
 		long tmp = fileOut.getChannel().position();
-		fileOut.getChannel().position(stackpos);
-		fileStream.print(stacklimit);
 		fileOut.getChannel().position(localspos);
 		fileStream.print(localsval);
+		fileOut.getChannel().position(stackpos);
+		fileStream.print(stacklimit);
 
 		fileOut.getChannel().position(tmp);
 	}
@@ -366,6 +386,35 @@ public class CodeGenerator {
 
 		fileStream.println("invokestatic "+mod+"/"+func+params+ret);
 		updateStack(-nparam);
+	}
+	
+	
+	private String getCallType(SimpleNode node){
+		String type;
+		String mod = "";
+		String func = "";
+		String params = "";
+		String ret = "";
+		int nparam = 0;
+
+		String name = node.getValue();
+		int dotIndex;
+		if((dotIndex = name.indexOf("."))!=-1){
+			mod = name.substring(0,dotIndex);
+			func = name.substring(dotIndex+1,name.length());
+		}
+		else{
+			func = name;
+			mod = st.module;
+		}
+		
+		
+		if(mod.compareTo(st.module) == 0)
+			type = st.functions.get(func).ret.type;
+		else
+			type = "integer";
+		
+		return type;
 	}
 
 	public String generateArgList(SimpleNode node){
@@ -461,7 +510,8 @@ public class CodeGenerator {
 		Declaration var = lookupVarAssign(name);
 		System.out.println(var.name);
 
-		if(var.local == -1){
+		//IMPORTANTE
+		if(!var.global && var.local == -1){
 			var.local = localsval;
 			localsval++;
 		}
@@ -508,17 +558,18 @@ public class CodeGenerator {
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
+		
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
 		if(term1.getId() == YalTreeConstants.JJTTERM){
 					
+			String[] term1TypeParts = getTermType(term1).split("\\.");
+			String term1Type = term1TypeParts[0];
+			String term1Value = "";
+			if(term1TypeParts.length > 1)
+				term1Value = term1TypeParts[1];
+			
 			if(children == 2){
-				
-				String[] term1TypeParts = getTermType(term1).split("\\.");
-				String term1Type = term1TypeParts[0];
-				String term1Value = "";
-				if(term1TypeParts.length > 1)
-					term1Value = term1TypeParts[1];
 				
 				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
 				
@@ -528,26 +579,54 @@ public class CodeGenerator {
 				if(term2TypeParts.length > 1)
 					term2Value = term2TypeParts[1];
 				
-				if(term1Type.compareTo("integer")==0 && term1Value.compareTo(""+lhs.local)==0
+				//var = var+integer
+				if(!lhs.global && term1Type.compareTo("integer")==0 && term1Value.compareTo(""+lhs.local)==0
 				   && term2Type.compareTo("smallint")==0 && rhs.getValue().compareTo("+")==0){
-					  
+						  
+					storeVar = false;
 					fileStream.println("iinc "+lhs.local+" "+term2Value);
-					storeVar = false;
 				}
-				else if(term1Type.compareTo("smallint")==0 && rhs.getValue().compareTo("+")==0
-				    && term1Type.compareTo("integer")==0 && term1Value.compareTo(""+lhs.local)==0){
-					
+				//var = integer+var
+				else if(!lhs.global && term1Type.compareTo("smallint")==0 && rhs.getValue().compareTo("+")==0
+					    && term1Type.compareTo("integer")==0 && term1Value.compareTo(""+lhs.local)==0){
+						
+					storeVar = false;
 					fileStream.println("iinc "+lhs.local+" "+term1Value);
-					storeVar = false;
 				}
+	
 				else{
 					generateTerm(term1);
 					generateTerm(term2);
 					fileStream.println(arithmeticOpToStr(rhs.getValue()));
+					
+					//array = integer+integer
+					if(lhs.arrayAccess()){
+						storeVar = false;
+						System.out.println("Assign array to value");
+						generateArrayValueAssign(lhs,null);
+					}
 				}
 			}
 			else{
-				generateTerm(term1);
+				
+				if(lhs.arrayAccess()){
+					
+					//array = constant
+					if(term1Type.compareTo("smallint")==0 || term1Type.compareTo("bigint")==0){
+						storeVar = false;
+						generateArrayValueAssign(lhs,Integer.valueOf(term1Value));
+					}
+					//array = integer
+					else if(term1Type.compareTo("array")!=0){
+						storeVar = false;
+						generateTerm(term1);
+						generateArrayValueAssign(lhs,null);
+					}
+					else
+						generateTerm(term1);
+				}
+				else
+					generateTerm(term1);
 			}
 		}
 		else
@@ -582,7 +661,7 @@ public class CodeGenerator {
 			else
 
 			if(child.getId() == YalTreeConstants.JJTCALL){
-				type = "call.";
+				type = getCallType(child);
 			}
 		}
 		else{
@@ -695,37 +774,62 @@ public class CodeGenerator {
 		fileStream.println();
 	}
 	
-	private void generateArrayValueAssign(Declaration array, int val){
+	private void generateArrayValueAssign(Declaration array, Integer val){
 		int labelNr = this.loopLabelNr;
 		this.loopLabelNr++;
 		
 		String loopLabel = "loop"+labelNr;
 		String loopLabelEnd = "loop"+labelNr+"_end";
 		
-		Declaration counter = new Declaration("counter","integer",false);
-		counter.local = localsval;
+		if(counter == null){
+			counter = new Declaration("counter","integer",false);
+			counter.local = localsval;
+			localsval++;
+		}
 		
+		//Not a constant
+		if(val==null){
+			if(arrayValueAssignRhs==null){
+				arrayValueAssignRhs = new Declaration("arrayValueAssignRhs","integer",false);
+				arrayValueAssignRhs.local = localsval;
+				localsval++;
+			}
+			storeVar(arrayValueAssignRhs);
+		}
+		
+		//Set counter to 0
+		loadConst(0);
+		storeVar(counter);
+		
+		//Check end of loop: counter < array.length
 		loadVar(counter);
 		loadVar(array);
 		fileStream.println("arraylength");
-		fileStream.println("if_icmpge "+loopLabelEnd);
+		fileStream.println(comparisonOpToStr("<")+" "+loopLabelEnd);
 		
+		//Set array at counter position: array[counter] = val
 		loadVar(array);
 		loadVar(counter);
-		loadConst(val);
+		if(val==null)
+			loadVar(arrayValueAssignRhs);
+		else
+			loadConst(val.intValue());
 		fileStream.println("iastore");
+		updateStack(-3);
+		
+		
+		//Increment counter
+		fileStream.println("iinc "+counter.local+" 1");
 		fileStream.println("goto "+loopLabel);
 		
 		fileStream.println(loopLabel+":");
 		fileStream.println();
-		localsval++;
-		
 	}
 
 	private void storeVar(Declaration var){
 		if(var.isArray() && var.intAccess()){
 			fileStream.println("iastore");
-			updateStack(-2);
+			updateStack(-3);
 		}
 		else{
 			if(var.global)
