@@ -169,8 +169,7 @@ public class CodeGenerator {
 
 		if(name.equals("main")){
 			fileStream.print("[Ljava/lang/String;)V\n");
-			//TODO: check this
-			//localsval++;
+			localsval++;
 		}
 		else
 		{
