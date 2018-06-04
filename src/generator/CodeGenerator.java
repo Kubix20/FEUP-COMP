@@ -1,8 +1,12 @@
+package generator;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import semantic.*;
+import tree.*;
 
 public class CodeGenerator {
 

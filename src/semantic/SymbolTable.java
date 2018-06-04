@@ -1,6 +1,9 @@
+package semantic;
+
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import tree.*;
 
 public class SymbolTable{
 
@@ -719,11 +722,11 @@ public class SymbolTable{
 		if(children > 1){
 
 			String rhsType = "undefined";
-			
+
 			SimpleNode child = (SimpleNode) node.jjtGetChild(1);
 			if(child.getId() == YalTreeConstants.JJTARRAYSIZE){
 				System.out.println("ArraySize");
-				
+
 				if(child.jjtGetNumChildren() > 0){
 					Declaration access = analyseAccess((SimpleNode) child.jjtGetChild(0));
 
@@ -739,14 +742,14 @@ public class SymbolTable{
 				else{
 					lhs.size = Integer.valueOf(child.getValue());
 				}
-				
+
 				lhs.value = 0;
 				rhsType = "array";
 			}
 
 			if(child.getId() == YalTreeConstants.JJTINTELEMENT){
 				System.out.println("IntElement");
-				
+
 				String parts = child.getValue();
 				String op = "";
 				String val = "";
@@ -757,10 +760,10 @@ public class SymbolTable{
 					op = ""+parts.charAt(0);
 					val = parts.substring(1,parts.length()).trim();
 				}
-				
+
 				if(op.compareTo("-")==0)
 					val = op+val;
-				
+
 				lhs.value = Integer.valueOf(val);
 				rhsType = "integer";
 			}
@@ -773,7 +776,7 @@ public class SymbolTable{
 				}
 				else
 					lhs.init(rhsType);
-				
+
 			}
 			else {
 				if(lhs.isInt()){
@@ -805,7 +808,7 @@ public class SymbolTable{
 				analyseFunction(node);
 			}
 		}
-		
+
 		Declaration dec;
 		for (String name : globalDeclarations.keySet()){
 			System.out.println(name);
@@ -870,7 +873,7 @@ public class SymbolTable{
 
 		return errors.size();
 	}
-	
+
 	public void printWarnings(){
 		String newLine = System.lineSeparator();
 		for(String warning : warnings)
@@ -881,7 +884,7 @@ public class SymbolTable{
 		//System.out.println("Warning: "+msg);
 		warnings.add("Warning: "+msg);
 	}
-	
+
 	private void logWarning(int line, String msg){
 		//System.out.println("Warning on line " +line+": "+msg);
 		warnings.add("Warning on line " +line+": "+msg);
