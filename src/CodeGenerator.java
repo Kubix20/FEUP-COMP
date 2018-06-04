@@ -48,10 +48,10 @@ public class CodeGenerator {
 		generateGlobals(root);
 		if(hasGlobalAttrs)
 			fileStream.println();
-		
+
 		if(hasGlobalAttrsInits)
 			generateClinit(root);
-		
+
 		generateFunctions(root);
 
 		fileStream.close();
@@ -59,12 +59,12 @@ public class CodeGenerator {
 	}
 
 	private void generateGlobals(SimpleNode node) throws IOException {
-		
+
 		Declaration var;
 		for(String name : st.globalDeclarations.keySet())
 		{
 			var = st.globalDeclarations.get(name);
-			
+
 			if (var.isInt()){
 				if(var.value != 0) //TODO: check this
 					fileStream.println(".field static " + var.name + " I = "+var.value);
@@ -78,42 +78,42 @@ public class CodeGenerator {
 					hasGlobalAttrsInits = true;
 				}
 			}
-			
+
 			hasGlobalAttrs=true;
 		}
 
 	}
-		
+
 	public void generateDeclaration(Declaration var){
 		//System.out.println("Value: "+var.value+" Size: "+var.size);
-		
+
 		//Initialize array
 		loadConst(var.size);
 		fileStream.println("newarray int");
 		storeGlobal(var);
 		fileStream.println();
-		
+
 		//Set value to all elements if needed
 		if(var.value != 0)
 			generateArrayValueAssign(var,var.value);
 	}
-	
+
 	public void generateClinit(SimpleNode node) throws IOException {
-		
+
 		stacklimit = 0;
 		stackval = 0;
 		localsval = 0;
 		counter = null;
 		arrayValueAssignRhs = null;
-		
+
 		fileStream.println(".method static public <clinit>()V");
-		
+
 		fileStream.print(".limit locals    \n");
 		long localspos = fileOut.getChannel().position() - 4;
 		fileStream.print(".limit stack    \n");
 		long stackpos = fileOut.getChannel().position() - 4;
 		fileStream.println();
-				
+
 		for(Declaration var : globalArraysInit){
 			generateDeclaration(var);
 		}
@@ -130,7 +130,7 @@ public class CodeGenerator {
 		fileStream.println(".end method");
 		fileStream.println();
 	}
-	
+
 	private void generateFunctions(SimpleNode node) throws IOException{
 		int children = node.jjtGetNumChildren();
 
@@ -197,7 +197,7 @@ public class CodeGenerator {
 			currFunction.ret.local=localsval;
 			localsval++;
 		}
-		
+
 		fileStream.print(".limit locals    \n");
 		long localspos = fileOut.getChannel().position() - 4;
 		fileStream.print(".limit stack    \n");
@@ -306,7 +306,7 @@ public class CodeGenerator {
 				ret = "I";
 		}
 		else if(mod.compareTo(st.module) == 0){
-			
+
 			if(st.functions.get(func).ret.isInt())
 				ret = "I";
 			else if(st.functions.get(func).ret.isArray())
@@ -320,7 +320,7 @@ public class CodeGenerator {
 		fileStream.println("invokestatic "+mod+"/"+func+params+ret);
 		updateStack(-nparam);
 	}
-	
+
 	private String getCallType(SimpleNode node){
 		String type;
 		String mod = "";
@@ -339,13 +339,13 @@ public class CodeGenerator {
 			func = name;
 			mod = st.module;
 		}
-		
-		
+
+
 		if(mod.compareTo(st.module) == 0)
 			type = st.functions.get(func).ret.type;
 		else
 			type = "integer";
-		
+
 		return type;
 	}
 
@@ -432,10 +432,10 @@ public class CodeGenerator {
 		else if(sizeAccess){
 			type = "sizeaccess.";
 		}
-		
+
 		return type;
 	}
-	
+
 	private Declaration generateAccessAssign(SimpleNode node){
 		String name = node.getValue();
 
@@ -450,10 +450,10 @@ public class CodeGenerator {
 
 		if(var.isArray()){
 			if(node.jjtGetNumChildren() == 1){
-				
+
 				var.access = "array";
 				loadVar(var);
-				
+
 				String indexName = ((SimpleNode) node.jjtGetChild(0)).getValue();
 				if(SymbolTable.isInt(indexName)){
 					loadConst(Integer.parseInt(indexName));
@@ -491,17 +491,17 @@ public class CodeGenerator {
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
-		
+
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 
 		if(term1.getId() == YalTreeConstants.JJTTERM){
-					
+
 			String[] term1TypeParts = getTermType(term1).split("\\.");
 			String term1Type = term1TypeParts[0];
 			String term1Value = "";
 			if(term1TypeParts.length > 1)
 				term1Value = term1TypeParts[1];
-		
+
 			//Temporarily update the variable's type if defined on an if else statement
 			if(lhs.incompatibleIfStatus()){
 				String branchType = getVarType(term1Type);
@@ -512,37 +512,37 @@ public class CodeGenerator {
 					lhs.newIfBranch = false;
 				}
 			}
-			
+
 			if(children == 2){
-				
+
 				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
-				
+
 				String[] term2TypeParts = getTermType(term2).split("\\.");
 				String term2Type = term2TypeParts[0];
 				String term2Value = "";
 				if(term2TypeParts.length > 1)
 					term2Value = term2TypeParts[1];
-				
+
 				//var = var+integer
 				if(!lhs.global && term1Type.compareTo("integer")==0 && term1Value.compareTo(""+lhs.local)==0
 				   && term2Type.compareTo("smallint")==0 && rhs.getValue().compareTo("+")==0){
-						  
+
 					storeVar = false;
 					fileStream.println("iinc "+lhs.local+" "+term2Value);
 				}
 				//var = integer+var
 				else if(!lhs.global && term1Type.compareTo("smallint")==0 && rhs.getValue().compareTo("+")==0
 					    && term1Type.compareTo("integer")==0 && term1Value.compareTo(""+lhs.local)==0){
-						
+
 					storeVar = false;
 					fileStream.println("iinc "+lhs.local+" "+term1Value);
 				}
-	
+
 				else{
 					generateTerm(term1);
 					generateTerm(term2);
 					fileStream.println(arithmeticOpToStr(rhs.getValue()));
-					
+
 					//array = integer+integer
 					if(lhs.arrayAccess()){
 						storeVar = false;
@@ -552,9 +552,9 @@ public class CodeGenerator {
 				}
 			}
 			else{
-				
+
 				if(lhs.arrayAccess()){
-					
+
 					//array = constant
 					if(term1Type.compareTo("smallint")==0 || term1Type.compareTo("bigint")==0){
 						storeVar = false;
@@ -576,7 +576,7 @@ public class CodeGenerator {
 		else
 
 		if(term1.getId() == YalTreeConstants.JJTARRAYSIZE){
-			
+
 			//Temporarily update the variable's type if defined on an if else statement
 			if(lhs.incompatibleIfStatus()){
 				if(lhs.newIfBranch){
@@ -592,7 +592,7 @@ public class CodeGenerator {
 		if(storeVar)
 			storeVar(lhs);
 	}
-	
+
 	private String getTermType(SimpleNode node){
 		String type = "";
 		String parts = node.getValue();
@@ -605,7 +605,7 @@ public class CodeGenerator {
 			op = ""+parts.charAt(0);
 			value = parts.substring(1,parts.length()).trim();
 		}
-		
+
 		if(node.jjtGetNumChildren() == 1){
 			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
 
@@ -621,10 +621,10 @@ public class CodeGenerator {
 		else{
 			type = getConstType(op+value);
 		}
-		
+
 		return type;
 	}
-	
+
 	private void generateTerm(SimpleNode node) throws IOException {
 		String parts = node.getValue();
 		String op = "";
@@ -652,7 +652,7 @@ public class CodeGenerator {
 		else{
 			if(op.compareTo("-")==0)
 				value = op+value;
-			
+
 			loadConst(Integer.parseInt(value));
 		}
 	}
@@ -662,14 +662,14 @@ public class CodeGenerator {
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
-		
+
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
 		String[] term1TypeParts = getTermType(term1).split("\\.");
 		String term1Type = term1TypeParts[0];
 		String term1Value = "";
 		if(term1TypeParts.length > 1)
 			term1Value = term1TypeParts[1];
-			
+
 		if(children == 2){
 			generateTerm(term1);
 			SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
@@ -686,7 +686,7 @@ public class CodeGenerator {
 				fileStream.print(comparisonOpToStr(node.getValue()));
 			}
 		}
-		
+
 		fileStream.println(" "+label);
 	}
 
@@ -694,19 +694,19 @@ public class CodeGenerator {
 		int children = node.jjtGetNumChildren();
 		int labelNr = this.ifLabelNr;
 		this.ifLabelNr++;
-		
+
 		String elseLabel = "else"+labelNr;
 		String ifLabelEnd = "if"+labelNr+"_end";
 		String exprLabel = ifLabelEnd;
-		
-		if(children > 2) 
+
+		if(children > 2)
 			exprLabel = elseLabel;
-			
+
 		generateExprtest((SimpleNode) node.jjtGetChild(0),exprLabel);
 		fileStream.println();
 		setLocalsNewIfBranch();
 		generateStmtlst((SimpleNode) node.jjtGetChild(1));
-		
+
 		//else clause
 		if(children > 2){
 			fileStream.println("goto "+ifLabelEnd);
@@ -715,7 +715,7 @@ public class CodeGenerator {
 			setLocalsNewIfBranch();
 			generateStmtlst((SimpleNode) node.jjtGetChild(2));
 		}
-		
+
 		fileStream.println();
 		fileStream.println(ifLabelEnd+":");
 		fileStream.println();
@@ -724,38 +724,38 @@ public class CodeGenerator {
 	private void generateWhile(SimpleNode node) throws IOException {
 		int labelNr = this.loopLabelNr;
 		this.loopLabelNr++;
-		
+
 		String loopLabel = "loop"+labelNr;
 		String loopLabelEnd = "loop"+labelNr+"_end";
-		
+
 		fileStream.println(loopLabel+":");
 		fileStream.println();
-		
+
 		generateExprtest((SimpleNode) node.jjtGetChild(0),loopLabelEnd);
-		
+
 		fileStream.println();
-		
+
 		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 		fileStream.println("goto "+loopLabel);
-		
+
 		fileStream.println();
 		fileStream.println(loopLabelEnd+":");
 		fileStream.println();
 	}
-	
+
 	private void generateArrayValueAssign(Declaration array, Integer val){
 		int labelNr = this.loopLabelNr;
 		this.loopLabelNr++;
-		
+
 		String loopLabel = "loop"+labelNr;
 		String loopLabelEnd = "loop"+labelNr+"_end";
-		
+
 		if(counter == null){
 			counter = new Declaration("counter","integer",false);
 			counter.local = localsval;
 			localsval++;
 		}
-		
+
 		//Not a constant
 		if(val==null){
 			if(arrayValueAssignRhs==null){
@@ -765,17 +765,18 @@ public class CodeGenerator {
 			}
 			storeVar(arrayValueAssignRhs);
 		}
-		
+
 		//Set counter to 0
 		loadConst(0);
 		storeVar(counter);
-		
+
 		//Check end of loop: counter < array.length
+		fileStream.println(loopLabel+":");
 		loadVar(counter);
 		loadVar(array);
 		fileStream.println("arraylength");
 		fileStream.println(comparisonOpToStr("<")+" "+loopLabelEnd);
-		
+
 		//Set array at counter position: array[counter] = val
 		loadVar(array);
 		loadVar(counter);
@@ -785,13 +786,13 @@ public class CodeGenerator {
 			loadConst(val.intValue());
 		fileStream.println("iastore");
 		updateStack(-3);
-		
-		
+
+
 		//Increment counter
 		fileStream.println("iinc "+counter.local+" 1");
 		fileStream.println("goto "+loopLabel);
-		
-		fileStream.println(loopLabel+":");
+
+		fileStream.println(loopLabelEnd+":");
 		fileStream.println();
 	}
 
@@ -807,7 +808,7 @@ public class CodeGenerator {
 				storeLocal(var);
 		}
 	}
-	
+
 	private void storeLocal(Declaration var){
 		if(var.local==-1)
 		{
@@ -897,7 +898,7 @@ public class CodeGenerator {
 		fileStream.println("ldc " + str);
 		updateStack(1);
 	}
-	
+
 	private String getVarType(String type){
 		if(type.compareTo("array")==0)
 			return "array";
@@ -912,7 +913,7 @@ public class CodeGenerator {
 		else
 			return "bigint."+value;
 	}
-	
+
 	public String arithmeticOpToStr(String op){
 		String res = "";
 		switch(op) {
@@ -946,7 +947,7 @@ public class CodeGenerator {
 		updateStack(-1);
 		return res;
 	}
-	
+
 	public String comparisonOpToStr(String op){
 		String res = "";
 		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
@@ -977,7 +978,7 @@ public class CodeGenerator {
 		updateStack(-2);
 		return res;
 	}
-	
+
 	public String comparisonZeroOpToStr(String op){
 		String res = "";
 		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
@@ -1004,7 +1005,7 @@ public class CodeGenerator {
 			default:
 				break;
 		}
-		
+
 		updateStack(-1);
 		return res;
 	}
@@ -1014,7 +1015,7 @@ public class CodeGenerator {
 		if(stackval < 0) stackval = 0;
 		if(stackval > stacklimit) stacklimit = stackval;
 	}
-	
+
 	private void setLocalsNewIfBranch(){
 		for(String name : currFunction.localDeclarations.keySet())
 			currFunction.localDeclarations.get(name).newIfBranch = true;
