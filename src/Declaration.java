@@ -5,6 +5,7 @@ public class Declaration {
 	public String type;
 	public String access = "";
 	public String ifStatus = "";
+	public boolean newIfBranch = false;
 	public boolean global;
 	public boolean init;
 	public int value;

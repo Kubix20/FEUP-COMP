@@ -388,7 +388,6 @@ public class CodeGenerator {
 		updateStack(-nparam);
 	}
 	
-	
 	private String getCallType(SimpleNode node){
 		String type;
 		String mod = "";
@@ -555,6 +554,7 @@ public class CodeGenerator {
 	private void generateAssign(SimpleNode node) throws IOException {
 		boolean storeVar = true;
 		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
+		System.out.println(lhs.ifStatus);
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
@@ -568,6 +568,17 @@ public class CodeGenerator {
 			String term1Value = "";
 			if(term1TypeParts.length > 1)
 				term1Value = term1TypeParts[1];
+		
+			//Temporarily update the variable's type if defined on an if else statement
+			if(lhs.incompatibleIfStatus()){
+				String branchType = getVarType(term1Type);
+				if(lhs.newIfBranch){
+					System.out.println("Update: "+branchType);
+					lhs.type = branchType;
+					lhs.access = "";
+					lhs.newIfBranch = false;
+				}
+			}
 			
 			if(children == 2){
 				
@@ -632,6 +643,16 @@ public class CodeGenerator {
 		else
 
 		if(term1.getId() == YalTreeConstants.JJTARRAYSIZE){
+			
+			//Temporarily update the variable's type if defined on an if else statement
+			if(lhs.incompatibleIfStatus()){
+				if(lhs.newIfBranch){
+					System.out.println("Update: array");
+					lhs.type = "array";
+					lhs.access = "";
+					lhs.newIfBranch = false;
+				}
+			}
 			generateArraySize(term1);
 		}
 
@@ -708,18 +729,31 @@ public class CodeGenerator {
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
+		
 		SimpleNode term1 = (SimpleNode) rhs.jjtGetChild(0);
-
-		if(term1.getId() == YalTreeConstants.JJTTERM){
+		String[] term1TypeParts = getTermType(term1).split("\\.");
+		String term1Type = term1TypeParts[0];
+		String term1Value = "";
+		if(term1TypeParts.length > 1)
+			term1Value = term1TypeParts[1];
+			
+		if(children == 2){
 			generateTerm(term1);
-			if(children == 2){
-				SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
-				generateTerm(term2);
-				fileStream.println(arithmeticOpToStr(rhs.getValue()));
+			SimpleNode term2 = (SimpleNode) rhs.jjtGetChild(1);
+			generateTerm(term2);
+			fileStream.println(arithmeticOpToStr(rhs.getValue()));
+			fileStream.print(comparisonOpToStr(node.getValue()));
+		}
+		else{
+			if(term1Type.compareTo("smallint")==0 && term1Value.compareTo("0")==0){
+				fileStream.print(comparisonZeroOpToStr(node.getValue()));
+			}
+			else{
+				generateTerm(term1);
+				fileStream.print(comparisonOpToStr(node.getValue()));
 			}
 		}
-
-		fileStream.print(comparisonOpToStr(node.getValue()));
+		
 		fileStream.println(" "+label);
 	}
 
@@ -737,6 +771,7 @@ public class CodeGenerator {
 			
 		generateExprtest((SimpleNode) node.jjtGetChild(0),exprLabel);
 		fileStream.println();
+		setLocalsNewIfBranch();
 		generateStmtlst((SimpleNode) node.jjtGetChild(1));
 		
 		//else clause
@@ -744,6 +779,7 @@ public class CodeGenerator {
 			fileStream.println("goto "+ifLabelEnd);
 			fileStream.println();
 			fileStream.println(elseLabel+":");
+			setLocalsNewIfBranch();
 			generateStmtlst((SimpleNode) node.jjtGetChild(2));
 		}
 		
@@ -928,6 +964,13 @@ public class CodeGenerator {
 		fileStream.println("ldc " + str);
 		updateStack(1);
 	}
+	
+	private String getVarType(String type){
+		if(type.compareTo("array")==0)
+			return "array";
+		else
+			return "integer";
+	}
 
 	private String getConstType(String value){
 		int val = Integer.parseInt(value);
@@ -970,7 +1013,7 @@ public class CodeGenerator {
 		updateStack(-1);
 		return res;
 	}
-
+	
 	public String comparisonOpToStr(String op){
 		String res = "";
 		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
@@ -1001,11 +1044,47 @@ public class CodeGenerator {
 		updateStack(-2);
 		return res;
 	}
+	
+	public String comparisonZeroOpToStr(String op){
+		String res = "";
+		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
+		// ex: se condicao if(a > b) o salto sera feito quando a <= b
+		switch(op) {
+			case "==":
+				res = "ifne";
+				break;
+			case "!=":
+				res = "ifeq";
+				break;
+			case "<=":
+				res = "ifgt";
+				break;
+			case ">=":
+				res = "iflt";
+				break;
+			case ">":
+				res = "ifle";
+				break;
+			case "<":
+				res = "ifge";
+				break;
+			default:
+				break;
+		}
+		
+		updateStack(-1);
+		return res;
+	}
 
 	private void updateStack(int factor){
 		stackval = stackval + factor;
 		if(stackval < 0) stackval = 0;
 		if(stackval > stacklimit) stacklimit = stackval;
+	}
+	
+	private void setLocalsNewIfBranch(){
+		for(String name : currFunction.localDeclarations.keySet())
+			currFunction.localDeclarations.get(name).newIfBranch = true;
 	}
 
 	private Declaration lookupVar(String name){
