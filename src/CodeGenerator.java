@@ -17,7 +17,8 @@ public class CodeGenerator {
 	private int loopLabelNr;
 	private int ifLabelNr;
 	private boolean hasGlobalAttrs;
-	private boolean hasGlobalAttrsAssigns;
+	private boolean hasGlobalAttrsInits;
+	private ArrayList<Declaration> globalArraysInit;
 	private Declaration counter;
 	private Declaration arrayValueAssignRhs;
 
@@ -36,7 +37,8 @@ public class CodeGenerator {
 		this.loopLabelNr = 0;
 		this.ifLabelNr = 0;
 		hasGlobalAttrs = false;
-		hasGlobalAttrsAssigns = false;
+		hasGlobalAttrsInits = false;
+		globalArraysInit = new ArrayList<Declaration>();
 	}
 
 	public void generate() throws IOException {
@@ -47,7 +49,7 @@ public class CodeGenerator {
 		if(hasGlobalAttrs)
 			fileStream.println();
 		
-		if(hasGlobalAttrsAssigns)
+		if(hasGlobalAttrsInits)
 			generateClinit(root);
 		
 		generateFunctions(root);
@@ -57,103 +59,43 @@ public class CodeGenerator {
 	}
 
 	private void generateGlobals(SimpleNode node) throws IOException {
-		int children = node.jjtGetNumChildren();
-
-		SimpleNode child;
-		for(int i=0; i< children; i++)
-		{
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTDECLARATION)
-			{
-				declareGlobal(child);
-				hasGlobalAttrs=true;
-			}
-		}
-
-	}
-	
-	private void declareGlobal(SimpleNode node) throws IOException {
-		int children = node.jjtGetNumChildren();
-		if(children > 1)
-			hasGlobalAttrsAssigns = true;
 		
-		SimpleNode lhs = (SimpleNode)node.jjtGetChild(0);
-		String name = lhs.getValue();
-
 		Declaration var;
-
-		//detetar array (identificado por []) e, se for o caso, extrair o seu nome
-		if(name.indexOf("[]")!=-1)
-		{
-			name = name.substring(0, name.indexOf("["));
-			var = st.globalDeclarations.get(name);
-			if (var.type == null)
-				var.type = "array";
-		}
-		else
+		for(String name : st.globalDeclarations.keySet())
 		{
 			var = st.globalDeclarations.get(name);
-			if (var.type == null)
-				var.type = "integer";
+			
+			if (var.isInt()){
+				if(var.value != 0) //TODO: check this
+					fileStream.println(".field static " + var.name + " I = "+var.value);
+				else
+					fileStream.println(".field static " + var.name + " I");
+			}
+			else if (var.isArray()){
+				fileStream.println(".field static " + var.name + " [I");
+				if(var.init){
+					globalArraysInit.add(var);
+					hasGlobalAttrsInits = true;
+				}
+			}
+			
+			hasGlobalAttrs=true;
 		}
-
-		if (var.isInt())
-			fileStream.println(".field static " + var.name + " I");
-		else if (var.isArray())
-			fileStream.println(".field static " + var.name + " [I");
 
 	}
-	
-	public void generateDeclaration(SimpleNode node){
-		int children = node.jjtGetNumChildren();
-		boolean storeVar = true;
 		
-		if(children == 2){
-			
-			SimpleNode lhs = (SimpleNode) node.jjtGetChild(0);
-			String name = lhs.getValue();
-			
-			if(name.indexOf("[]")!=-1)
-			{	
-				name = name.substring(0, name.indexOf("["));
-			}
-			
-			Declaration var = st.globalDeclarations.get(name);
-			
-			SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
-			if(rhs.getId() == YalTreeConstants.JJTARRAYSIZE){
-				System.out.println("Generating ArraySize...");
-				generateArraySize(rhs);
-			}
-			
-			if(rhs.getId() == YalTreeConstants.JJTINTELEMENT){
-				rhs.getValue();
-				String parts = rhs.getValue();
-				String op = "";
-				String value = "";
-				if(parts.charAt(0) == ' '){
-					value = parts.trim();
-				}
-				else{
-					op = ""+parts.charAt(0);
-					value = parts.substring(1,parts.length()).trim();
-				}
-				
-				if(op.compareTo("-")==0)
-					value = op+value;
-				
-				if(var.arrayAccess()){
-					storeVar = false;
-					generateArrayValueAssign(var,Integer.valueOf(value));
-				}
-				else
-					loadConst(Integer.parseInt(value));
-			}
-			
-			if(storeVar)
-				storeVar(var);
-		}
+	public void generateDeclaration(Declaration var){
+		//System.out.println("Value: "+var.value+" Size: "+var.size);
+		
+		//Initialize array
+		loadConst(var.size);
+		fileStream.println("newarray int");
+		storeGlobal(var);
+		fileStream.println();
+		
+		//Set value to all elements if needed
+		if(var.value != 0)
+			generateArrayValueAssign(var,var.value);
 	}
 	
 	public void generateClinit(SimpleNode node) throws IOException {
@@ -171,21 +113,12 @@ public class CodeGenerator {
 		fileStream.print(".limit stack    \n");
 		long stackpos = fileOut.getChannel().position() - 4;
 		fileStream.println();
-		
-		int children = node.jjtGetNumChildren();
-		
-		SimpleNode child;
-		for(int i=0; i< children; i++)
-		{
-			child = (SimpleNode) node.jjtGetChild(i);
-
-			if(child.getId() == YalTreeConstants.JJTDECLARATION)
-			{
-				generateDeclaration(child);
-			}
+				
+		for(Declaration var : globalArraysInit){
+			generateDeclaration(var);
 		}
 
-		//actualizar o limit locals e limit stack no ficheiro
+		//Update limit locals and limit stack
 		long tmp = fileOut.getChannel().position();
 		fileOut.getChannel().position(localspos);
 		fileStream.print(localsval);

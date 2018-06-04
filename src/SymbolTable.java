@@ -391,6 +391,7 @@ public class SymbolTable{
 		}
 
 		var.access = "undefined";
+		var.sizeAccess = false;
 
 		if(var.partialIfStatus()){
 			logError(line,"Variable "+var.name+" may reach this position uninitialized");
@@ -436,6 +437,7 @@ public class SymbolTable{
 				if(var.isArray()){
 					if(var.isInitialized()){
 						var.access = "integer";
+						var.sizeAccess = true;
 					}
 					else
 						logError(line,"Invalid size access of variable "+var.name+" not initialized");
@@ -443,8 +445,9 @@ public class SymbolTable{
 				else
 					logError(line,"Invalid size access of variable "+var.name);
 			}
-			else
+			else{
 				var.access = var.type;
+			}
 		}
 
 		return var;
@@ -716,18 +719,49 @@ public class SymbolTable{
 		if(children > 1){
 
 			String rhsType = "undefined";
+			
 			SimpleNode child = (SimpleNode) node.jjtGetChild(1);
 			if(child.getId() == YalTreeConstants.JJTARRAYSIZE){
 				System.out.println("ArraySize");
+				
+				if(child.jjtGetNumChildren() > 0){
+					Declaration access = analyseAccess((SimpleNode) child.jjtGetChild(0));
 
-				if(!analyseArraySize(child))
-					return;
-
+					if(access != null && !access.undefinedAccess()){
+						if(access.sizeAccess)
+							lhs.size = access.size;
+						else
+							lhs.size = access.value;
+					}
+					else
+						return;
+				}
+				else{
+					lhs.size = Integer.valueOf(child.getValue());
+				}
+				
+				lhs.value = 0;
 				rhsType = "array";
 			}
 
 			if(child.getId() == YalTreeConstants.JJTINTELEMENT){
 				System.out.println("IntElement");
+				
+				String parts = child.getValue();
+				String op = "";
+				String val = "";
+				if(parts.charAt(0) == ' '){
+					val = parts.trim();
+				}
+				else{
+					op = ""+parts.charAt(0);
+					val = parts.substring(1,parts.length()).trim();
+				}
+				
+				if(op.compareTo("-")==0)
+					val = op+val;
+				
+				lhs.value = Integer.valueOf(val);
 				rhsType = "integer";
 			}
 
@@ -735,9 +769,11 @@ public class SymbolTable{
 				if(lhs.isArray()){
 					if(rhsType.compareTo("integer") == 0)
 						logError(line,"Illegal array "+lhs.name+" declaration");
+						return;
 				}
 				else
 					lhs.init(rhsType);
+				
 			}
 			else {
 				if(lhs.isInt()){

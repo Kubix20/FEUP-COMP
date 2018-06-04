@@ -4,17 +4,17 @@ public class Declaration {
 	public String name;
 	public String type;
 	public String access = "";
+	public boolean sizeAccess = false;
 	public String ifStatus = "";
 	public boolean newIfBranch = false;
 	public boolean global;
 	public boolean init;
 	public int value;
-	public int size;
-	public int local;
+	public int size = -1;
+	public int local = -1;
 	
 	public Declaration(){
 		init = false;
-		local = -1;
 	}
 	
 	public Declaration(String name){
@@ -22,7 +22,6 @@ public class Declaration {
 		type = "undefined";
 		init = false;
 		global = false;
-		local = -1;
 	}
 	
 	public Declaration(String name, String type, boolean global){
@@ -30,7 +29,6 @@ public class Declaration {
 		this.type = type;
 		init = false;
 		this.global = global;
-		local = -1;
 	}
 	
 	
@@ -50,6 +48,23 @@ public class Declaration {
 		
 		else if(type.compareTo("array") == 0)
 			initArray();
+	}
+	
+	public void initInt (){
+		if(!init)
+		{
+			init = true;
+			type = "integer";
+		}
+	}
+	
+	public void initInt (int value){
+		if(!init)
+		{
+			init = true;
+			this.value = value;
+			type = "integer";
+		}
 	}
 	
 	public void initArray(){
@@ -74,23 +89,6 @@ public class Declaration {
 			return true;
 		else
 			return init;
-	}
-	
-	public void initInt (){
-		if(!init)
-		{
-			init = true;
-			type = "integer";
-		}
-	}
-	
-	public void initInt (int value){
-		if(!init)
-		{
-			init = true;
-			this.value = value;
-			type = "integer";
-		}
 	}
 	
 	public boolean isInt(){
