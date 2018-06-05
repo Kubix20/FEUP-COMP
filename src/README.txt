@@ -16,12 +16,12 @@ Therefore, the tool can be summarized in these steps:
 
 EXECUTE: java -jar Yal.jar <input_yal_file> (in case of bad input, print usage will be shown)
 
-DEALING WITH SYNTACTIC ERRORS: (Describe how the syntactic error recovery of your tool does work. Does it exit after the first error?)
+DEALING WITH SYNTACTIC ERRORS: Syntactic analysis was done with the goal to collect as many errors as possible. Therefore, a recovery mechanism was implemented so as to avoid the parser exiting abruptly. This mechanism involves, when encountering an error, trying to skip to a specific token that should isolate the error and allow  the parser to proceed normally, like the error was never there. Sometimes, in order to be less specific and try to guarantee even further that the error can be correctly isolated, the parser skips to not necessarily one, but one in a possible set of tokens. This recovery mechanism is implemented via Java methods, namely error_skipto, error_skipto_lookahead and error_multskipto (the last one using multiple possibilities for recovery tokens). It is used extensively throughout the grammar, but main uses can be found in the Stmt(), Assign(), If() and Call() productions. This way, syntactic analysis does not exit after the first error it encounters.
 
 SEMANTIC ANALYSIS: (Refer the semantic rules implemented by your tool.)
 
 INTERMEDIATE REPRESENTATIONS (IRs): The AST, result of the syntactic analysis, is printed when this stage is complete.
-The was used directly with the Symbol Table to generate the code. As register-level optimizations were not made, there is no generation of a LLIR.
+The AST was used directly with the Symbol Table to generate the code. As register-level optimizations were not made, there is no generation of a LLIR.
 
 CODE GENERATION: (when applicable, describe how the code generation of your tool works and identify the possible problems your tool has regarding code generation.)
 
