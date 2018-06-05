@@ -437,7 +437,7 @@ public class CodeGenerator {
 			}
 			else{
 
-				Declaration var = lookupVar(val);
+				Declaration var = lookupVar(val, true);
 				loadVar(var);
 
 				if(var.isInt())
@@ -464,7 +464,7 @@ public class CodeGenerator {
 			sizeAccess = true;
 		}
 
-		Declaration var = lookupVar(name);
+		Declaration var = lookupVar(name, true);
 		loadVar(var);
 
 		if(node.jjtGetNumChildren() == 1){
@@ -473,7 +473,7 @@ public class CodeGenerator {
 				loadConst(Integer.parseInt(indexName));
 			}
 			else{
-				Declaration index = lookupVar(indexName);
+				Declaration index = lookupVar(indexName, true);
 				loadVar(index);
 			}
 
@@ -500,7 +500,7 @@ public class CodeGenerator {
 			sizeAccess = true;
 		}
 
-		Declaration var = lookupVar(name);
+		Declaration var = lookupVar(name, true);
 		type = var.type+"."+var.local;
 
 		if(node.jjtGetNumChildren() == 1){
@@ -522,7 +522,7 @@ public class CodeGenerator {
 	private Declaration generateAccessAssign(SimpleNode node) throws IOException{
 		String name = node.getValue();
 
-		Declaration var = lookupVarAssign(name);
+		Declaration var = lookupVar(name, false);
 		System.out.println(var.name);
 
 		//IMPORTANT
@@ -542,7 +542,7 @@ public class CodeGenerator {
 					loadConst(Integer.parseInt(indexName));
 				}
 				else{
-					Declaration index = lookupVar(indexName);
+					Declaration index = lookupVar(indexName, true);
 					loadVar(index);
 				}
 
@@ -1221,46 +1221,29 @@ public class CodeGenerator {
 	/**
 		* Looks up recursively a variable
 		* @param name variable name
+		* @param parametersFirst true if to check function parameters before function return
 		* @return variable as a Declaration object
 		*/
-	private Declaration lookupVar(String name){
+	private Declaration lookupVar(String name, boolean parametersFirst){
 		if(currFunction != null){
 			if(currFunction.localDeclarations.containsKey(name)){
 				return currFunction.localDeclarations.get(name);
 			}
 
-			if(currFunction.parameters.containsKey(name)){
-				return currFunction.parameters.get(name);
-			}
-
-			if(currFunction.ret.name.compareTo(name)==0){
-				return currFunction.ret;
-			}
-		}
-
-		if(st.globalDeclarations.containsKey(name))
-			return st.globalDeclarations.get(name);
-
-		return null;
-	}
-
-	/**
-		* Looks up recursively a variable in an assign statement
-		* @param name variable name
-		* @return variable as a Declaration object
-		*/
-	private Declaration lookupVarAssign(String name){
-		if(currFunction != null){
-			if(currFunction.localDeclarations.containsKey(name)){
-				return currFunction.localDeclarations.get(name);
+			if(parametersFirst){
+				if(currFunction.parameters.containsKey(name)){
+					return currFunction.parameters.get(name);
+				}
 			}
 
 			if(currFunction.ret.name.compareTo(name)==0){
 				return currFunction.ret;
 			}
 
-			if(currFunction.parameters.containsKey(name)){
-				return currFunction.parameters.get(name);
+			if(!parametersFirst){
+				if(currFunction.parameters.containsKey(name)){
+					return currFunction.parameters.get(name);
+				}
 			}
 		}
 

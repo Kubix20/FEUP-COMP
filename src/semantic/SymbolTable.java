@@ -45,9 +45,10 @@ public class SymbolTable{
 	/**
 		* Recursively looks up a variable in the symbol table
 		* @param name variable name
+		* @param parametersFirst true if to check function parameters before function return
 		* @return variable object (null if not found)
 		*/
-	private Declaration lookupVariable(String name){
+	private Declaration lookupVariable(String name, boolean parametersFirst){
 		Declaration var = null;
 
 		if(currFunction != null){
@@ -56,9 +57,11 @@ public class SymbolTable{
 				return var;
 			}
 
-			if (currFunction.parameters.containsKey(name)){
-				var = currFunction.parameters.get(name);
-				return var;
+			if(parametersFirst) {
+				if (currFunction.parameters.containsKey(name)){
+					var = currFunction.parameters.get(name);
+					return var;
+				}
 			}
 
 			if (currFunction.ret.name.compareTo(name)==0) {
@@ -66,37 +69,13 @@ public class SymbolTable{
 				return var;
 			}
 
-		}
-
-		if (globalDeclarations.containsKey(name))
-			var = globalDeclarations.get(name);
-
-		return var;
-	}
-
-	/**
-		* Recursively looks up a variable for an assign
-		* @param name variable name
-		* @return variable object (null if not found)
-		*/
-	private Declaration lookupVariableAssign(String name){
-		Declaration var = null;
-
-		if(currFunction != null){
-			if (currFunction.localDeclarations.containsKey(name)){
-				var = currFunction.localDeclarations.get(name);
-				return var;
+			if(!parametersFirst) {
+				if (currFunction.parameters.containsKey(name)){
+					var = currFunction.parameters.get(name);
+					return var;
+				}
 			}
 
-			if (currFunction.ret.name.compareTo(name)==0){
-				var = currFunction.ret;
-				return var;
-			}
-
-			if (currFunction.parameters.containsKey(name)){
-				var = currFunction.parameters.get(name);
-				return var;
-			}
 		}
 
 		if (globalDeclarations.containsKey(name))
@@ -235,7 +214,7 @@ public class SymbolTable{
 							String paramType = "integer";
 
 							if(!isInt(paramName)){
-								Declaration var = lookupVariable(paramName);
+								Declaration var = lookupVariable(paramName, true);
 								if(var != null){
 
 									if(!var.isInitialized()){
@@ -376,7 +355,7 @@ public class SymbolTable{
 		}
 
 
-		Declaration var = lookupVariableAssign(name);
+		Declaration var = lookupVariable(name, false);
 
 		if(var == null){
 			var = new Declaration(name);
@@ -404,7 +383,7 @@ public class SymbolTable{
 				if(var.isInitialized()){
 					if(!isInt(indexName)){
 
-						Declaration index = lookupVariable(indexName);
+						Declaration index = lookupVariable(indexName, true);
 						if(index != null){
 							if(index.isInitialized())
 								var.access = "integer";
@@ -443,7 +422,7 @@ public class SymbolTable{
 			sizeAccess = true;
 		}
 
-		Declaration var = lookupVariable(name);
+		Declaration var = lookupVariable(name, true);
 		if(var == null){
 			logError(line,"Variable "+name+" not found");
 			return null;
@@ -470,7 +449,7 @@ public class SymbolTable{
 				if(var.isInitialized()){
 					if(!isInt(indexName)){
 
-						Declaration index = lookupVariable(indexName);
+						Declaration index = lookupVariable(indexName, true);
 						if(index != null){
 							if(index.isInitialized())
 								var.access = "integer";
