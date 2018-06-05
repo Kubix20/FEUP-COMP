@@ -108,7 +108,7 @@ public class CodeGenerator {
 			}
 			else if (var.isArray()){
 				fileStream.println(".field static " + var.name + " [I");
-				if(var.init){
+				if(var.size != -1){
 					globalArraysInit.add(var);
 					hasGlobalAttrsInits = true;
 				}
@@ -290,7 +290,11 @@ public class CodeGenerator {
 
 		fileOut.getChannel().position(tmp);
 	}
-
+	
+	/**
+		* Generates code for a generic statement list (calls respective generation function for each statement)
+		* @param node node representing statement list
+		*/
 	private void generateStmtlst(SimpleNode node) throws IOException {
 
 		SimpleNode child;

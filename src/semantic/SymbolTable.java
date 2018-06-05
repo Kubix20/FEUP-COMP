@@ -785,23 +785,30 @@ public class SymbolTable{
 			SimpleNode child = (SimpleNode) node.jjtGetChild(1);
 			if(child.getId() == YalTreeConstants.JJTARRAYSIZE){
 				System.out.println("ArraySize");
+				int size = 0;
 
 				if(child.jjtGetNumChildren() > 0){
 					Declaration access = analyseAccess((SimpleNode) child.jjtGetChild(0));
 
 					if(access != null && !access.undefinedAccess()){
 						if(access.sizeAccess)
-							lhs.size = access.size;
+							size = access.size;
 						else
-							lhs.size = access.value;
+							size = access.value;
 					}
 					else
 						return;
 				}
 				else{
-					lhs.size = Integer.valueOf(child.getValue());
+					size = Integer.parseInt(child.getValue());
 				}
-
+				
+				if(size < 0){
+					logError(line,"Invalid negative value for size of array "+lhs.name);
+					return;
+				}
+				
+				lhs.size = size;
 				lhs.value = 0;
 				rhsType = "array";
 			}
@@ -823,25 +830,39 @@ public class SymbolTable{
 				if(op.compareTo("-")==0)
 					val = op+val;
 
-				lhs.value = Integer.valueOf(val);
+				lhs.value = Integer.parseInt(val);
 				rhsType = "integer";
 			}
 
 			if(newVar){
-				if(lhs.isArray()){
-					if(rhsType.compareTo("integer") == 0)
+				
+				if(lhs.isInt()){
+					lhs.init(rhsType);
+				}
+				else if(lhs.isArray()){
+					if(rhsType.compareTo("integer") == 0){
 						logError(line,"Illegal array "+lhs.name+" declaration");
 						return;
+					}
+					
+					lhs.initArray();
 				}
-				else
-					lhs.init(rhsType);
-
 			}
 			else {
 				if(lhs.isInt()){
-					if(rhsType.compareTo("array") == 0)
+					if(rhsType.compareTo("array") == 0){
 						logError(line,"Incompatible types: "+lhs.type+" and "+rhsType);
+						return;
+					}
 				}
+				else if(lhs.isArray()){
+					if(!lhs.init && rhsType.compareTo("integer") == 0){
+						logError(line,"Illegal assign to uninitialized array "+lhs.name);
+						return;
+					}
+				}
+				
+				lhs.init = true;
 			}
 		}
 		else{
