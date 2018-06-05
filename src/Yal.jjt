@@ -5,8 +5,6 @@ options {
   NODE_DEFAULT_VOID=true;
   NODE_SCOPE_HOOK=true;
   TRACK_TOKENS=true;
-  JJTREE_OUTPUT_DIRECTORY="tree";
-  OUTPUT_DIRECTORY="tree";
 }
 
 PARSER_BEGIN(Yal)
