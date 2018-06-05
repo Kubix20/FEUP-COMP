@@ -13,6 +13,8 @@ import tree.*;
 	*/
 public class CodeGenerator {
 
+	// Debug prints activated?
+	private boolean debug;
 	// Root node
 	private SimpleNode root;
 	// Symbol Table
@@ -48,7 +50,8 @@ public class CodeGenerator {
 		* @param root root tree node
 		* @param st symbol table
 		*/
-	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
+	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st, boolean debug) {
+		this.debug = debug;
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
 		String outFileName = inputFile.getName().split("\\.")[0] + ".j";
 
@@ -290,7 +293,7 @@ public class CodeGenerator {
 
 		fileOut.getChannel().position(tmp);
 	}
-	
+
 	/**
 		* Generates code for a generic statement list (calls respective generation function for each statement)
 		* @param node node representing statement list
@@ -305,25 +308,25 @@ public class CodeGenerator {
 			if(child.getId() == YalTreeConstants.JJTASSIGN)
 			{
 
-				System.out.println("Generating assign...");
+				if(this.debug) System.out.println("Generating assign...");
 				generateAssign(child);
 				fileStream.println();
 			}
 			if(child.getId() == YalTreeConstants.JJTCALL)
 			{
-				System.out.println("Generating call...");
+				if(this.debug) System.out.println("Generating call...");
 				generateCall(child);
 				fileStream.println();
 			}
 			if(child.getId() == YalTreeConstants.JJTIF)
 			{
-				System.out.println("Generating if...");
+				if(this.debug) System.out.println("Generating if...");
 				generateIf(child);
 				fileStream.println();
 			}
 			if(child.getId() == YalTreeConstants.JJTWHILE)
 			{
-				System.out.println("Generating while...");
+				if(this.debug) System.out.println("Generating while...");
 				generateWhile(child);
 				fileStream.println();
 			}
@@ -527,7 +530,7 @@ public class CodeGenerator {
 		String name = node.getValue();
 
 		Declaration var = lookupVar(name, false);
-		System.out.println(var.name);
+		if(this.debug) System.out.println(var.name);
 
 		//IMPORTANT
 		if(!var.global && var.local == -1){
@@ -584,7 +587,7 @@ public class CodeGenerator {
 	private void generateAssign(SimpleNode node) throws IOException {
 		boolean storeVar = true;
 		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
-		System.out.println(lhs.ifStatus);
+		if(this.debug) System.out.println(lhs.ifStatus);
 
 		SimpleNode rhs = (SimpleNode) node.jjtGetChild(1);
 		int children = rhs.jjtGetNumChildren();
@@ -603,7 +606,7 @@ public class CodeGenerator {
 			if(lhs.incompatibleIfStatus()){
 				String branchType = getVarType(term1Type);
 				if(lhs.newIfBranch){
-					System.out.println("Update: "+branchType);
+					if(this.debug) System.out.println("Update: "+branchType);
 					lhs.type = branchType;
 					lhs.access = "";
 					lhs.newIfBranch = false;
@@ -643,7 +646,7 @@ public class CodeGenerator {
 					//array = integer+integer
 					if(lhs.arrayAccess()){
 						storeVar = false;
-						System.out.println("Assign array to value");
+						if(this.debug) System.out.println("Assign array to value");
 						generateArrayValueAssign(lhs,null);
 					}
 				}
@@ -677,7 +680,7 @@ public class CodeGenerator {
 			//Temporarily update the variable's type if defined on an if else statement
 			if(lhs.incompatibleIfStatus()){
 				if(lhs.newIfBranch){
-					System.out.println("Update: array");
+					if(this.debug) System.out.println("Update: array");
 					lhs.type = "array";
 					lhs.access = "";
 					lhs.newIfBranch = false;

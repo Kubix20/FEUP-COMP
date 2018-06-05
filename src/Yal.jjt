@@ -21,11 +21,11 @@ public class Yal {
   public static int nErrors = 0;
 
   public static void printUsage() {
-    System.out.println("Usage: java Yal <file path>");
+    System.out.println("Usage: java -jar yal2jvm.jar <file path:string> [OPTIONAL debug:1 for true, anything else false]");
   }
   public static void main(String args[]) throws ParseException, FileNotFoundException {
 
-	if(args.length != 1){
+	if(args.length < 1){
 		System.out.println("Wrong amount of arguments");
     Yal.printUsage();
 		return;
@@ -37,6 +37,12 @@ public class Yal {
     Yal.printUsage();
 		return;
 	}
+
+  boolean debug;
+  if(args.length > 1 && Integer.parseInt(args[1]) == 1)
+    debug = true;
+  else
+    debug = false;
 
 	String newline = System.lineSeparator();
 	System.out.println(newline+newline+
@@ -51,7 +57,7 @@ public class Yal {
 		return;
 	}
 
-	SymbolTable st = new SymbolTable();
+	SymbolTable st = new SymbolTable(debug);
 	st.analyse(root); //Semantic analysis
 	st.print();
 	errors = st.printErrors();
@@ -61,7 +67,7 @@ public class Yal {
 	}
 	st.printWarnings();
 
-	CodeGenerator cg = new CodeGenerator(inputFile,root,st);
+	CodeGenerator cg = new CodeGenerator(inputFile,root,st,debug);
 	try{
 		cg.generate();
 	}
