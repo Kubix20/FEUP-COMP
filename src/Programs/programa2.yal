@@ -1,5 +1,5 @@
 module programa2 {
-
+y[];
 function a[]=f1(b[]) {
 		 i = 0;
 		 N = b.size;
@@ -10,10 +10,10 @@ function a[]=f1(b[]) {
 		 }
 }
 
-function a[]=f2(N) {
-		 a = [N];
-		 
-		 a = 1; // initialize all the N elements of a with value 1
+function f2(N) {
+		 y = [N];
+
+		 y = 1; // initialize all the N elements of a with value 1
 }
 
 function main() {
@@ -28,12 +28,11 @@ function main() {
 	io.println("first: ",first);
 	io.println("last: ",last);
 
-	a = f2(100);
+	f2(100);
 
-	first = a[0];
-	last = a[99];
+	first = y[0];
+	last = y[99];
 	io.println("first: ",first);
 	io.println("last: ",last);
 }
 }
-
