@@ -10,6 +10,8 @@ import tree.*;
 	*/
 public class SymbolTable{
 
+	// Debug prints activated?
+	public boolean debug;
 	// Module name
 	public String module;
 	// Module functions
@@ -28,7 +30,8 @@ public class SymbolTable{
 	/**
 		* Inits a symbol table instance
 		*/
-	public SymbolTable(){
+	public SymbolTable(boolean debug){
+		this.debug = debug;
 		this.functions = new HashMap<String,Function>();
 		this.globalDeclarations = new LinkedHashMap<String,Declaration>();
 		this.errors = new ArrayList<String>();
@@ -105,13 +108,13 @@ public class SymbolTable{
 		SimpleNode child = (SimpleNode) rhs.jjtGetChild(0);
 
 		if( child.getId() == YalTreeConstants.JJTTERM ){
-			System.out.println("Term");
+			if(this.debug) System.out.println("Term");
 			String rhsType;
 			String type1 = analyseTerm(child);
 			rhsType = type1;
 			String type2 = "";
 			if(children == 2){
-				System.out.println("2nd Term");
+				if(this.debug) System.out.println("2nd Term");
 				type2 = analyseTerm((SimpleNode) rhs.jjtGetChild(1));
 
 				if(type2.compareTo("undefined") != 0){
@@ -146,7 +149,7 @@ public class SymbolTable{
 		else
 
 		if(	child.getId() == YalTreeConstants.JJTARRAYSIZE ){
-			System.out.println("ArraySize");
+			if(this.debug) System.out.println("ArraySize");
 
 			if(!analyseArraySize(child))
 				return;
@@ -265,7 +268,7 @@ public class SymbolTable{
 
 		String parts = node.getValue();
 
-		System.out.println("Parts: "+parts);
+		if(this.debug) System.out.println("Parts: "+parts);
 		String op = "";
 		String value = "";
 		if(parts.charAt(0) == ' '){
@@ -276,8 +279,8 @@ public class SymbolTable{
 			value = parts.substring(1,parts.length()).trim();
 		}
 
-		System.out.println("Term op: "+op);
-		System.out.println("Term value: "+value);
+		if(this.debug) System.out.println("Term op: "+op);
+		if(this.debug) System.out.println("Term value: "+value);
 
 		if(node.jjtGetNumChildren() == 1) {
 			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
@@ -293,7 +296,7 @@ public class SymbolTable{
 						return "undefined";
 					}
 
-					System.out.println("Term var name: "+var.name);
+					if(this.debug) System.out.println("Term var name: "+var.name);
 
 					if(var.isArray() && op.compareTo("")!=0 ){
 						logError(line,"Illegal use of operator on array type");
@@ -332,7 +335,7 @@ public class SymbolTable{
 		*/
 	public boolean analyseArraySize(SimpleNode node){
 		int line = node.getLine();
-		
+
 		if(node.jjtGetNumChildren() > 0){
 			Declaration access = analyseAccess((SimpleNode) node.jjtGetChild(0));
 
@@ -403,7 +406,7 @@ public class SymbolTable{
 							else logError(line,"Index "+indexName+" access of variable "+name+" of illegal type");
 						}
 						else
-							logError(line,"Index "+indexName+" access of variable "+name+" not found");				
+							logError(line,"Index "+indexName+" access of variable "+name+" not found");
 					}
 					else
 						var.access = "integer";
@@ -466,14 +469,14 @@ public class SymbolTable{
 						if(index != null){
 							if(index.isInt()){
 								if(index.isInitialized()){
-									
+
 									if(analysingGlobals){
 										if(index.value < 0 || index.value > var.size-1){
 											logError("Index "+index.value+" out of bounds for variable "+name);
 											return var;
 										}
 									}
-									
+
 									var.access = "integer";
 								}
 								else
@@ -486,7 +489,7 @@ public class SymbolTable{
 							logError(line,"Index "+indexName+" access of variable "+name+" not found");
 					}
 					else{
-						
+
 						if(analysingGlobals){
 							int indexVal = Integer.parseInt(indexName);
 							if(indexVal < 0 || indexVal > var.size-1){
@@ -494,7 +497,7 @@ public class SymbolTable{
 								return var;
 							}
 						}
-					
+
 						var.access = "integer";
 					}
 				}
@@ -545,13 +548,13 @@ public class SymbolTable{
 		SimpleNode child = (SimpleNode) rhs.jjtGetChild(0);
 
 		if( child.getId() == YalTreeConstants.JJTTERM ){
-			System.out.println("Term");
+			if(this.debug) System.out.println("Term");
 			String rhsType;
 			String type1 = analyseTerm(child);
 			rhsType = type1;
 			String type2 = "";
 			if(children == 2){
-				System.out.println("2nd Term");
+				if(this.debug) System.out.println("2nd Term");
 				type2 = analyseTerm((SimpleNode) rhs.jjtGetChild(1));
 
 				if(type1.compareTo("integer") != 0 || type2.compareTo("integer") != 0){
@@ -586,7 +589,7 @@ public class SymbolTable{
 
 			ArrayList<Declaration> currScope = currFunction.getCurrIfScope();
 			ArrayList<Declaration> ifScope = new ArrayList<Declaration>();
-			System.out.println("ifScope size: "+currScope.size());
+			if(this.debug) System.out.println("ifScope size: "+currScope.size());
 
 			for(Declaration var : currScope){
 				ifScope.add(new Declaration(var));
@@ -595,15 +598,15 @@ public class SymbolTable{
 
 			analyseStmtlst((SimpleNode) node.jjtGetChild(2));
 			ArrayList<Declaration> elseScope = currFunction.getCurrIfScope();
-			System.out.println("elseScope size: "+elseScope.size());
+			if(this.debug) System.out.println("elseScope size: "+elseScope.size());
 
 			for(Declaration ifVar : ifScope){
-				System.out.println("IfScope: "+ifVar.name+" ifStatus: "+ifVar.ifStatus);
+				if(this.debug) System.out.println("IfScope: "+ifVar.name+" ifStatus: "+ifVar.ifStatus);
 				boolean found = false;
 
 				int j = 0;
 				for(Declaration elseVar: elseScope){
-					System.out.println("ElseScope: "+elseVar.name+" ifStatus: "+elseVar.ifStatus);
+					if(this.debug) System.out.println("ElseScope: "+elseVar.name+" ifStatus: "+elseVar.ifStatus);
 					if(ifVar.name.compareTo(elseVar.name) == 0){
 						found = true;
 
@@ -655,23 +658,23 @@ public class SymbolTable{
 			child = (SimpleNode) node.jjtGetChild(i);
 
 			if(child.getId() == YalTreeConstants.JJTWHILE ){
-				System.out.println("While");
+				if(this.debug) System.out.println("While");
 				analyseExprtest((SimpleNode) child.jjtGetChild(0));
 				analyseStmtlst((SimpleNode) child.jjtGetChild(1));
 			}
 
 			if(child.getId() == YalTreeConstants.JJTIF ){
-				System.out.println("If");
+				if(this.debug) System.out.println("If");
 				analyseIf(child);
 			}
 
 			if(child.getId() == YalTreeConstants.JJTASSIGN ){
-				System.out.println("Assign");
+				if(this.debug) System.out.println("Assign");
 				analyseAssign(child);
 			}
 
 			if(child.getId() == YalTreeConstants.JJTCALL ){
-				System.out.println("Call");
+				if(this.debug) System.out.println("Call");
 				analyseCall(child);
 			}
 		}
@@ -700,7 +703,7 @@ public class SymbolTable{
 			child = (SimpleNode) node.jjtGetChild(i);
 
 			if(child.getId() == YalTreeConstants.JJTSTMTLST){
-				System.out.println("Stmtlst");
+				if(this.debug) System.out.println("Stmtlst");
 				analyseStmtlst(child);
 				break;
 			}
@@ -726,11 +729,11 @@ public class SymbolTable{
 
 		if (functionName.indexOf(".")!=-1) {
 			functionName = functionName.substring(functionName.indexOf(".")+1);
-			logWarning(line,"Function name contains '.' ." +"Name changed to "+functionName);
+			logWarning(line,"Function name contains '.' - name changed to "+functionName);
 		}
 
 		if (functions.containsKey(functionName)) {
-			logError(line,"Function "+functionName+"already declared");
+			logError(line,"Function "+functionName+" already declared");
 			return;
 		}
 
@@ -820,14 +823,14 @@ public class SymbolTable{
 
 			SimpleNode child = (SimpleNode) node.jjtGetChild(1);
 			if(child.getId() == YalTreeConstants.JJTARRAYSIZE){
-				System.out.println("ArraySize");
+				if(this.debug) System.out.println("ArraySize");
 				int size = 0;
 
 				if(child.jjtGetNumChildren() > 0){
 					Declaration access = analyseAccess((SimpleNode) child.jjtGetChild(0));
-					
+
 					if(access != null && !access.undefinedAccess()){
-						
+
 						if(access.intAccess()){
 							if(access.sizeAccess)
 								size = access.size;
@@ -845,19 +848,19 @@ public class SymbolTable{
 				else{
 					size = Integer.parseInt(child.getValue());
 				}
-				
+
 				if(size < 0){
 					logError(line,"Invalid negative value for size of array "+lhs.name);
 					return;
 				}
-				
+
 				lhs.size = size;
 				lhs.value = 0;
 				rhsType = "array";
 			}
 
 			if(child.getId() == YalTreeConstants.JJTINTELEMENT){
-				System.out.println("IntElement");
+				if(this.debug) System.out.println("IntElement");
 
 				String parts = child.getValue();
 				String op = "";
@@ -878,7 +881,7 @@ public class SymbolTable{
 			}
 
 			if(newVar){
-				
+
 				if(lhs.isInt()){
 					lhs.init(rhsType);
 				}
@@ -887,7 +890,7 @@ public class SymbolTable{
 						logError(line,"Illegal array "+lhs.name+" declaration");
 						return;
 					}
-					
+
 					lhs.initArray();
 				}
 			}
@@ -904,7 +907,7 @@ public class SymbolTable{
 						return;
 					}
 				}
-				
+
 				lhs.init = true;
 			}
 		}
@@ -932,7 +935,7 @@ public class SymbolTable{
 
 			if(node.getId() == YalTreeConstants.JJTFUNCTION)
 			{
-				System.out.println("Function");
+				if(this.debug) System.out.println("Function");
 				analysingGlobals = false;
 				analyseFunction(node);
 			}
@@ -940,9 +943,9 @@ public class SymbolTable{
 
 		Declaration dec;
 		for (String name : globalDeclarations.keySet()){
-			System.out.println(name);
+			if(this.debug) System.out.println(name);
 			dec = globalDeclarations.get(name);
-			System.out.println(dec);
+			if(this.debug) System.out.println(dec);
             if(!dec.init)
 				logWarning("Global variable "+dec.name+" might not have been initialized");
 		}
@@ -960,7 +963,7 @@ public class SymbolTable{
 
 			if(node.getId() == YalTreeConstants.JJTFUNCTION)
 			{
-				System.out.println("Function body");
+				if(this.debug) System.out.println("Function body");
 				analyseFunctionBody(node);
 			}
 		}

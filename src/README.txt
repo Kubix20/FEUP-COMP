@@ -14,7 +14,7 @@ Therefore, the tool can be summarized in these steps:
 - Semantic analysis (with warning and error output, aborting if there are errors)
 - Code generation (with optimizations in regards to the instructions used, such as constant loading, use of i<op>_n instead of i<op> n when possible, use of iinc, etc)
 
-EXECUTE: java -jar Yal.jar <input_yal_file> (in case of bad input, print usage will be shown)
+EXECUTE: java -jar yal2jvm.jar <input_yal_file:string> [OPTIONAL debug:1 for debugging messages, anything else no messages]
 
 DEALING WITH SYNTACTIC ERRORS: Syntactic analysis was done with the goal to collect as many errors as possible. Therefore, a recovery mechanism was implemented so as to avoid the parser exiting abruptly. This mechanism involves, when encountering an error, trying to skip to a specific token that should isolate the error and allow  the parser to proceed normally, like the error was never there. Sometimes, in order to be less specific and try to guarantee even further that the error can be correctly isolated, the parser skips to not necessarily one, but one in a possible set of tokens. This recovery mechanism is implemented via Java methods, namely error_skipto, error_skipto_lookahead and error_multskipto (the last one using multiple possibilities for recovery tokens). It is used extensively throughout the grammar, but main uses can be found in the Stmt(), Assign(), If() and Call() productions. This way, syntactic analysis does not exit after the first error it encounters.
 
