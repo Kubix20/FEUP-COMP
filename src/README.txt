@@ -27,9 +27,9 @@ Global Declarations:
 	Arrays can be assigned to a value (i.e. a[] = 2) which assigns the value to all of its elements.
 	Whenever a array is (re)initialized with a [size] statement all elements default to 0.
 	Index ranges for array accesses are checked.
-	
+
 	Ex:
-	
+
 		a; <- undefined type
 		a=[10]; <- first assignment, creates an array with 10 elements
 		a=1; <- sets all elements to 1.
@@ -37,49 +37,49 @@ Global Declarations:
 		b=1; <- error, assignment to unitialized array
 		b=[5]; <- ok
 		b[-1] <- error, index out of bounds
-		
-	
+
+
 Functions:
 
 	Functions can be declared in any order and will always be visible. Their name must also be unique.
 	When a return variable for a function is declared it must be initialized with a valid value. If the return variable and one of the parameters have the same name it will only be possible to read the parameter and assign the return value. Furthermore if an attribute also shares the same name it will be impossible to access it.
 	In calls to other functions, if the function belongs to the same module both the arguments must match its definition in number and type and must be initialized and if the return is not void it must be compatible with the variable to be assigned. Otherwise it is assumed that an integer is returned unless it belongs to the io module, in which case void is returned.
-	
+
 	Ex:
 		function m = f(m){
 			m = m; <- initializes the return variable with the value of the parameter
-			
+
 			f2(); <- ok
 			f2(m); <- error, invalid arguments
 			c = otherModule/f2(); <- returns an integer
 		}
-		
+
 		function f2(){}
-		
+
 		function ret = f2(){} <- error, unitialized return
-		
-	
+
+
 Function Bodies - Variables, cicles, conditions and arithmetic expressions
-	
-	
+
+
 	A variable can be initialized as an array or as an integer and must be assigned when it is declared and its type will be defined to one compatible with the right hand side operator.
 	Arrays can be assigned to a value (i.e. a[] = 2) which assigns the value to all of its elements.
-	
+
 	Ex:
-		
+
 		a = 1+1; <- defines a as an integer
 		b = a.size; <- error, size access of an integer variable
-		a[0] = 1; 
+		a[0] = 1;
 		b = [a];
 		b = a; <- sets all elements to a.
 		b[0] = 2;
 		...
-		
-	
-	
+
+
+
 	Variables used in arithmetic expressions and comparisons must be numeric.
-	
-	Ex: 
+
+	Ex:
 		a = 1;
 		b = 2
 		c = [10];
@@ -89,12 +89,12 @@ Function Bodies - Variables, cicles, conditions and arithmetic expressions
 		if(a < c){...} <- error
 		d = a+b; <- ok
 		d = b+c <- error
-			
+
 	In nested if statements all declarations must be compatible to be visible on upper scopes (i.e. in an if/else statement a new variable must be initialized as the same type in both branches) otherwise their usage must be restrained to the statement in question.
-	
+
 	Ex:
 		a = 1;
-		
+
 		if(a == 1){
 			c = 3;
 		}
@@ -102,8 +102,8 @@ Function Bodies - Variables, cicles, conditions and arithmetic expressions
 			c = [10];
 		}
 		b = c; <- error, c might reach this point as an array or an integer
-		
-		
+
+
 		if(a == 1){
 			c = 3;
 		}
@@ -117,7 +117,9 @@ The AST was used directly with the Symbol Table to generate the code. As registe
 
 CODE GENERATION: (when applicable, describe how the code generation of your tool works and identify the possible problems your tool has regarding code generation.)
 
-OVERVIEW: (refer the approach used in your tool, the main algorithms, the third-party tools and/or packages, etc.)
+OVERVIEW: The tool keeps it simple in terms of algorithms used. Initially, in order to achieve a LL(1) grammar, some procedures, mostly factorization, were applied, as described during the course (despite this, 2 local lookaheads with value 2 were used, since altering the grammar to make them LL(1) would make the resulting grammar too unreadable for the group).
+For the semantic analysis/symbol table construction, a simple passage through the AST was the option chosen. For code generation, another passage through the AST, now with the help of the Symbol Table, is the way the code generator works. Whenever possible (and by default), the generator tries to minimize the instruction cost by selecting optimal instructions (e.g. for doing x=x+1 and x being local var 0, generator generates iinc 0 1).
+Other than Java collections, no external packages were used.
 
 TESTSUITE AND TEST INFRASTRUCTURE: (Describe the content of your testsuite regarding the number of examples, the approach to automate the test, etc.)
 
