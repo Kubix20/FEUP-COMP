@@ -22,6 +22,8 @@ public class SymbolTable{
 	public ArrayList<String> errors;
 	// Semantic analysis warnings
 	public ArrayList<String> warnings;
+	// If global declarations are being analysed
+	private boolean analysingGlobals;
 
 	/**
 		* Inits a symbol table instance
@@ -31,6 +33,7 @@ public class SymbolTable{
 		this.globalDeclarations = new LinkedHashMap<String,Declaration>();
 		this.errors = new ArrayList<String>();
 		this.warnings = new ArrayList<String>();
+		this.analysingGlobals = false;
 	}
 
 	/**
@@ -328,6 +331,8 @@ public class SymbolTable{
 		* @return true if correct access, false otherwise
 		*/
 	public boolean analyseArraySize(SimpleNode node){
+		int line = node.getLine();
+		
 		if(node.jjtGetNumChildren() > 0){
 			Declaration access = analyseAccess((SimpleNode) node.jjtGetChild(0));
 
@@ -335,6 +340,10 @@ public class SymbolTable{
 				return false;
 			else if(access.undefinedAccess())
 				return false;
+			else if(!access.intAccess()){
+				logError(line,"Illegal type for array definition - expected integer");
+				return false;
+			}
 		}
 
 		return true;
@@ -385,13 +394,17 @@ public class SymbolTable{
 
 						Declaration index = lookupVariable(indexName, true);
 						if(index != null){
-							if(index.isInitialized())
-								var.access = "integer";
-							else
-								logError(line,"Index "+indexName+" access of variable "+name+" might not have been initialized");
+							if(index.isInt()){
+								if(index.isInitialized())
+									var.access = "integer";
+								else
+									logError(line,"Index "+indexName+" access of variable "+name+" might not have been initialized");
+							}
+							else logError(line,"Index "+indexName+" access of variable "+name+" of illegal type");
 						}
 						else
-							logError(line,"Index "+indexName+" access of variable "+name+" not found");				}
+							logError(line,"Index "+indexName+" access of variable "+name+" not found");				
+					}
 					else
 						var.access = "integer";
 				}
@@ -451,16 +464,39 @@ public class SymbolTable{
 
 						Declaration index = lookupVariable(indexName, true);
 						if(index != null){
-							if(index.isInitialized())
-								var.access = "integer";
+							if(index.isInt()){
+								if(index.isInitialized()){
+									
+									if(analysingGlobals){
+										if(index.value < 0 || index.value > var.size-1){
+											logError("Index "+index.value+" out of bounds for variable "+name);
+											return var;
+										}
+									}
+									
+									var.access = "integer";
+								}
+								else
+									logError(line,"Index "+indexName+" access of variable "+name+" might not have been initialized");
+							}
 							else
-								logError(line,"Index "+indexName+" access of variable "+name+" might not have been initialized");
+								logError(line,"Index "+indexName+" access of variable "+name+" of illegal type");
 						}
 						else
-							logError(line,"Index "+indexName+" access of variable "+indexName+" not found");
+							logError(line,"Index "+indexName+" access of variable "+name+" not found");
 					}
-					else
+					else{
+						
+						if(analysingGlobals){
+							int indexVal = Integer.parseInt(indexName);
+							if(indexVal < 0 || indexVal > var.size-1){
+								logError("Index out of bounds for variable "+name);
+								return var;
+							}
+						}
+					
 						var.access = "integer";
+					}
 				}
 				else
 					logError(line,"Invalid index access of variable "+name+" not initialized");
@@ -789,12 +825,19 @@ public class SymbolTable{
 
 				if(child.jjtGetNumChildren() > 0){
 					Declaration access = analyseAccess((SimpleNode) child.jjtGetChild(0));
-
+					
 					if(access != null && !access.undefinedAccess()){
-						if(access.sizeAccess)
-							size = access.size;
-						else
-							size = access.value;
+						
+						if(access.intAccess()){
+							if(access.sizeAccess)
+								size = access.size;
+							else
+								size = access.value;
+						}
+						else{
+							logError(line,"Illegal type for array definition - expected integer");
+							return;
+						}
 					}
 					else
 						return;
@@ -883,12 +926,14 @@ public class SymbolTable{
 
 			if(node.getId() == YalTreeConstants.JJTDECLARATION)
 			{
+				analysingGlobals = true;
 				analyseDeclaration(node);
 			} else
 
 			if(node.getId() == YalTreeConstants.JJTFUNCTION)
 			{
 				System.out.println("Function");
+				analysingGlobals = false;
 				analyseFunction(node);
 			}
 		}

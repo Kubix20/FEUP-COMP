@@ -3,8 +3,8 @@ module mymodule {
 	a = 1;
 	N = -100;
 	b[] = [a];
-	b = -1;
-	c[] = [b[0]];
+	b = 1;
+	c = [b[0]];
 	
 	function cenas() {
 		a = -2+2;

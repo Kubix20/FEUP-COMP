@@ -101,7 +101,7 @@ public class CodeGenerator {
 			var = st.globalDeclarations.get(name);
 
 			if (var.isInt()){
-				if(var.value != 0) //TODO: check this
+				if(var.value != 0)
 					fileStream.println(".field static " + var.name + " I = "+var.value);
 				else
 					fileStream.println(".field static " + var.name + " I");
