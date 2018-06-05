@@ -8,24 +8,46 @@ import java.util.*;
 import semantic.*;
 import tree.*;
 
+/**
+	* Performs the final code generation (no register optimization)
+	*/
 public class CodeGenerator {
 
+	// Root node
 	private SimpleNode root;
+	// Symbol Table
 	private SymbolTable st;
+	// Current function
 	public Function currFunction;
+	// .j output file
 	private FileOutputStream fileOut;
 	private PrintStream fileStream;
+	// Limit stack value
 	private int stacklimit;
+	// Helper for bounding stack limit
 	private int stackval;
+	// Number of local variables to current function (for .limit locals)
 	private int localsval;
+	// Loop label number (to generate unique loop labels)
 	private int loopLabelNr;
+	// If label number (to generate unique if labels)
 	private int ifLabelNr;
+	// Does this module have global attributes?
 	private boolean hasGlobalAttrs;
+	// Does this module have initialized global attributes?
 	private boolean hasGlobalAttrsInits;
+	// Module's global arrays
 	private ArrayList<Declaration> globalArraysInit;
-	private Declaration counter;
+	// Helpers for array initialization through integer (e.g. a[100]; a=1;)
+	private Declaration counter; // Counter for loop iteration when assigning values to array elements
 	private Declaration arrayValueAssignRhs;
 
+	/**
+		* Inits a code generator instance
+		* @param inputFile input .yal file (so as to construct output file)
+		* @param root root tree node
+		* @param st symbol table
+		*/
 	public CodeGenerator(File inputFile, SimpleNode root, SymbolTable st) {
 		String path = inputFile.getAbsolutePath().split(inputFile.getName())[0];
 		String outFileName = inputFile.getName().split("\\.")[0] + ".j";
@@ -45,6 +67,10 @@ public class CodeGenerator {
 		globalArraysInit = new ArrayList<Declaration>();
 	}
 
+	/**
+		* Initiates the code generation
+		* @throws IOException (in case writing to output file fails)
+		*/
 	public void generate() throws IOException {
 		fileStream.println(".class public " + st.module);
 		fileStream.println(".super java/lang/Object"+System.lineSeparator());
@@ -62,6 +88,11 @@ public class CodeGenerator {
 		fileOut.close();
 	}
 
+	/**
+		* Generates the code for the module's global attributes
+		* @param node root node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateGlobals(SimpleNode node) throws IOException {
 
 		Declaration var;
@@ -88,9 +119,12 @@ public class CodeGenerator {
 
 	}
 
-	public void generateDeclaration(Declaration var){
-		//System.out.println("Value: "+var.value+" Size: "+var.size);
-
+	/**
+		* Generates code for a declaration statement
+		* @param var declaration to be generated
+		* @throws IOException (in case writing to output file fails)
+		*/
+	public void generateDeclaration(Declaration var) throws IOException{
 		//Initialize array
 		loadConst(var.size);
 		fileStream.println("newarray int");
@@ -102,6 +136,11 @@ public class CodeGenerator {
 			generateArrayValueAssign(var,var.value);
 	}
 
+	/**
+		* Generates the special static initialization method <clinit>
+		* @param node root node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	public void generateClinit(SimpleNode node) throws IOException {
 
 		stacklimit = 0;
@@ -135,6 +174,11 @@ public class CodeGenerator {
 		fileStream.println();
 	}
 
+	/**
+		* Generates the code for all module functions
+		* @param node root node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateFunctions(SimpleNode node) throws IOException{
 		int children = node.jjtGetNumChildren();
 
@@ -151,6 +195,11 @@ public class CodeGenerator {
 		}
 	}
 
+	/**
+		* Generates code for a specific function
+		* @param node function node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateFunction(SimpleNode node) throws IOException {
 		String name = node.getValue();
 		if (name.indexOf(".")!=-1) {
@@ -277,6 +326,11 @@ public class CodeGenerator {
 		}
 	}
 
+	/**
+		* Generates code for a call statement
+		* @param node call statement node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateCall(SimpleNode node) throws IOException{
 		String mod = "";
 		String func = "";
@@ -324,6 +378,10 @@ public class CodeGenerator {
 		updateStack(-nparam);
 	}
 
+	/**
+		* Gets the return type for a call statement
+		* @return return call type as a string
+		*/
 	private String getCallType(SimpleNode node){
 		String type;
 		String mod = "";
@@ -352,7 +410,13 @@ public class CodeGenerator {
 		return type;
 	}
 
-	public String generateArgList(SimpleNode node){
+	/**
+		* Generates code for argument list in function call
+		* @param node
+		* @return argument list code as a string
+		* @throws IOException
+		*/
+	public String generateArgList(SimpleNode node) throws IOException{
 		String ret = "(";
 
 		SimpleNode arg;
@@ -386,7 +450,12 @@ public class CodeGenerator {
 		return ret;
 	}
 
-	private void generateAccess(SimpleNode node){
+	/**
+		* Generates code for an access statement
+		* @param node access statement node
+		* @throws IOException
+		*/
+	private void generateAccess(SimpleNode node) throws IOException{
 		String name = node.getValue();
 		boolean sizeAccess = false;
 
@@ -416,6 +485,11 @@ public class CodeGenerator {
 		}
 	}
 
+	/**
+		* Gets the access type
+		* @param node access node
+		* @return access type as a string
+		*/
 	private String getAccessType(SimpleNode node){
 		String type;
 		String name = node.getValue();
@@ -439,13 +513,19 @@ public class CodeGenerator {
 		return type;
 	}
 
-	private Declaration generateAccessAssign(SimpleNode node){
+	/**
+		* Generates code for an access in the LHS of an assign statement
+		* @param node LHS access node
+		* @return access as a Declaration object with respective code generation attributes set
+		* @throws IOException
+		*/
+	private Declaration generateAccessAssign(SimpleNode node) throws IOException{
 		String name = node.getValue();
 
 		Declaration var = lookupVarAssign(name);
 		System.out.println(var.name);
 
-		//IMPORTANTE
+		//IMPORTANT
 		if(!var.global && var.local == -1){
 			var.local = localsval;
 			localsval++;
@@ -475,7 +555,12 @@ public class CodeGenerator {
 		return var;
 	}
 
-	private void generateArraySize(SimpleNode node){
+	/**
+		* Generates code for an array creation
+		* @param node array size node
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void generateArraySize(SimpleNode node) throws IOException{
 		if(node.jjtGetNumChildren() > 0){
 			generateAccess((SimpleNode) node.jjtGetChild(0));
 		}
@@ -487,6 +572,11 @@ public class CodeGenerator {
 		fileStream.println("newarray int");
 	}
 
+	/**
+		* Generates code for an assign statement
+		* @param node assign node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateAssign(SimpleNode node) throws IOException {
 		boolean storeVar = true;
 		Declaration lhs = generateAccessAssign((SimpleNode) node.jjtGetChild(0));
@@ -596,6 +686,11 @@ public class CodeGenerator {
 			storeVar(lhs);
 	}
 
+	/**
+		* Get a term's type (delegates to respective and more specific getType functions)
+		* @param node term node
+		* @return term type as a string
+		*/
 	private String getTermType(SimpleNode node){
 		String type = "";
 		String parts = node.getValue();
@@ -628,6 +723,11 @@ public class CodeGenerator {
 		return type;
 	}
 
+	/**
+		* Generates code for a term node
+		* @param node term node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateTerm(SimpleNode node) throws IOException {
 		String parts = node.getValue();
 		String op = "";
@@ -660,6 +760,12 @@ public class CodeGenerator {
 		}
 	}
 
+	/**
+		* Generates code for a conditional test (used in if and while statements)
+		* @param node conditional test node
+		* @param label conditional label to be used
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateExprtest(SimpleNode node, String label) throws IOException {
 		generateAccess((SimpleNode) node.jjtGetChild(0));
 
@@ -693,6 +799,11 @@ public class CodeGenerator {
 		fileStream.println(" "+label);
 	}
 
+	/**
+		* Generates code for an if statement
+		* @param node if statement node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateIf(SimpleNode node) throws IOException {
 		int children = node.jjtGetNumChildren();
 		int labelNr = this.ifLabelNr;
@@ -724,6 +835,11 @@ public class CodeGenerator {
 		fileStream.println();
 	}
 
+	/**
+		* Generates code for a while statement
+		* @param node while statement node
+		* @throws IOException (in case writing to output file fails)
+		*/
 	private void generateWhile(SimpleNode node) throws IOException {
 		int labelNr = this.loopLabelNr;
 		this.loopLabelNr++;
@@ -746,7 +862,13 @@ public class CodeGenerator {
 		fileStream.println();
 	}
 
-	private void generateArrayValueAssign(Declaration array, Integer val){
+	/**
+		* Generates code for special array initialization (e.g. a[100]; a=1;)
+		* @param array array to be initialized
+		* @param val value to initialize all array elements with
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void generateArrayValueAssign(Declaration array, Integer val) throws IOException{
 		int labelNr = this.loopLabelNr;
 		this.loopLabelNr++;
 
@@ -799,7 +921,12 @@ public class CodeGenerator {
 		fileStream.println();
 	}
 
-	private void storeVar(Declaration var){
+	/**
+		* Generates code for storing a variable
+		* @param var variable to be stored
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void storeVar(Declaration var) throws IOException{
 		if(var.isArray() && var.intAccess()){
 			fileStream.println("iastore");
 			updateStack(-3);
@@ -812,7 +939,12 @@ public class CodeGenerator {
 		}
 	}
 
-	private void storeLocal(Declaration var){
+	/**
+		* Generates code to store a local variable
+		* @param var local variable to be stored
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void storeLocal(Declaration var) throws IOException{
 		if(var.local==-1)
 		{
 			var.local = localsval;
@@ -834,7 +966,12 @@ public class CodeGenerator {
 		updateStack(-1);
 	}
 
-	private void storeGlobal(Declaration var){
+	/**
+		* Generates code to store a global variable
+		* @param var global variable to be stored
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void storeGlobal(Declaration var) throws IOException{
 		fileStream.print("putstatic " + st.module + "/" + var.name );
 		if(var.isInt())
 			fileStream.println(" I");
@@ -843,14 +980,24 @@ public class CodeGenerator {
 		updateStack(-1);
 	}
 
-	private void loadVar(Declaration var){
+	/**
+		* Generates code to load a variable
+		* @param var variable to be loaded
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void loadVar(Declaration var) throws IOException{
 		if(var.global)
 			loadGlobal(var);
 		else
 			loadLocal(var);
 	}
 
-	private void loadLocal(Declaration var){
+	/**
+		* Generates code to load a local variable
+		* @param var local variable to be loaded
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void loadLocal(Declaration var) throws IOException{
 		String type;
 		if(var.isInt())
 			type="i";
@@ -869,7 +1016,12 @@ public class CodeGenerator {
 		updateStack(1);
 	}
 
-	private void loadGlobal(Declaration var){
+	/**
+		* Generates code to load a global variable
+		* @param var global variable to be loaded
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void loadGlobal(Declaration var) throws IOException{
 		fileStream.print("getstatic " + st.module + "/" + var.name);
 		if(var.isInt())
 			fileStream.println(" I");
@@ -878,7 +1030,12 @@ public class CodeGenerator {
 		updateStack(1);
 	}
 
-	private void loadConst(int val){
+	/**
+		* Generates (optimized) code to load a constant
+		* @param val constant to be loaded
+		* @throws IOException (in case writing to output file fails)
+		*/
+	private void loadConst(int val) throws IOException{
 		//iconst - otimizado para inteiros 0 a 5
 		if(val >= 0 && val <= 5)
 			fileStream.println("iconst_" + val);
@@ -897,11 +1054,21 @@ public class CodeGenerator {
 		updateStack(1);
 	}
 
-	public void loadString(String str){
+	/**
+		* Generates code to load a string
+		* @param str string to be loaded
+		* @throws IOException (in case writing to output file fails)
+		*/
+	public void loadString(String str) throws IOException{
 		fileStream.println("ldc " + str);
 		updateStack(1);
 	}
 
+	/**
+		* Gets a variable's type
+		* @param type variable to be tested
+		* @return variable type (integer or array)
+		*/
 	private String getVarType(String type){
 		if(type.compareTo("array")==0)
 			return "array";
@@ -909,6 +1076,11 @@ public class CodeGenerator {
 			return "integer";
 	}
 
+	/**
+		* Gets a constant value's type (big or small integer; serves as a helper identifier only)
+		* @param value constant value as a string
+		* @return value as a string with corresponding smallint (if in [-127,127[) or bigint (otherwise) prefix
+		*/
 	private String getConstType(String value){
 		int val = Integer.parseInt(value);
 		if(val > -128 && val < 127)
@@ -917,6 +1089,11 @@ public class CodeGenerator {
 			return "bigint."+value;
 	}
 
+	/**
+		* Gets the code representation of an arithmetic operator
+		* @param op arithmetic operator
+		* @return operator's representation in target syntax
+		*/
 	public String arithmeticOpToStr(String op){
 		String res = "";
 		switch(op) {
@@ -951,6 +1128,11 @@ public class CodeGenerator {
 		return res;
 	}
 
+	/**
+		* Gets the code representation for the negation (due to how jumps are made) of a comparison operator
+		* @param op comparison operator
+		* @return operator's negation's representation in target syntax
+		*/
 	public String comparisonOpToStr(String op){
 		String res = "";
 		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
@@ -982,6 +1164,11 @@ public class CodeGenerator {
 		return res;
 	}
 
+	/**
+		* Gets the representation for the negation (due to how jumps are made) of a special case of comparison operator (when comparing to 0)
+		* @param op comparison operator
+		* @return operator's negation's representation in target syntax
+		*/
 	public String comparisonZeroOpToStr(String op){
 		String res = "";
 		// os saltos a realizar serao com base no inverso por isso devolve-se a operacao complementar
@@ -1013,17 +1200,29 @@ public class CodeGenerator {
 		return res;
 	}
 
+	/**
+		* Updates the stackval helper by a given factor and, if necessary, the stack limit
+		* @param factor factor to update stackval
+		*/
 	private void updateStack(int factor){
 		stackval = stackval + factor;
 		if(stackval < 0) stackval = 0;
 		if(stackval > stacklimit) stacklimit = stackval;
 	}
 
+	/**
+		* Set a new if branch in current function
+		*/
 	private void setLocalsNewIfBranch(){
 		for(String name : currFunction.localDeclarations.keySet())
 			currFunction.localDeclarations.get(name).newIfBranch = true;
 	}
 
+	/**
+		* Looks up recursively a variable
+		* @param name variable name
+		* @return variable as a Declaration object
+		*/
 	private Declaration lookupVar(String name){
 		if(currFunction != null){
 			if(currFunction.localDeclarations.containsKey(name)){
@@ -1045,6 +1244,11 @@ public class CodeGenerator {
 		return null;
 	}
 
+	/**
+		* Looks up recursively a variable in an assign statement
+		* @param name variable name
+		* @return variable as a Declaration object
+		*/
 	private Declaration lookupVarAssign(String name){
 		if(currFunction != null){
 			if(currFunction.localDeclarations.containsKey(name)){
