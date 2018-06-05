@@ -729,11 +729,11 @@ public class SymbolTable{
 
 		if (functionName.indexOf(".")!=-1) {
 			functionName = functionName.substring(functionName.indexOf(".")+1);
-			logWarning(line,"Function name contains '.' ." +"Name changed to "+functionName);
+			logWarning(line,"Function name contains '.' - name changed to "+functionName);
 		}
 
 		if (functions.containsKey(functionName)) {
-			logError(line,"Function "+functionName+"already declared");
+			logError(line,"Function "+functionName+" already declared");
 			return;
 		}
 

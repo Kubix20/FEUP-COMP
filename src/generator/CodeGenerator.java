@@ -360,8 +360,15 @@ public class CodeGenerator {
 			params = generateArgList((SimpleNode) node.jjtGetChild(0));
 			nparam = node.jjtGetChild(0).jjtGetNumChildren();
 		}
-		else
-			params = "()";
+		else {
+			
+			if(func.compareTo("main")==0){
+				fileStream.println("aconst_null");
+				params = "([Ljava/lang/String;)";
+			}
+			else
+				params = "()";
+		}	
 
 		if (mod.compareTo("io") == 0){
 			if ((func.compareTo("print") == 0) || (func.compareTo("println") == 0) || (func.compareTo("write") == 0))
