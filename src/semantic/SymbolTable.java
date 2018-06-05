@@ -5,15 +5,27 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import tree.*;
 
+/**
+	* Performs the semantic analysis and constructs the symbol table
+	*/
 public class SymbolTable{
 
+	// Module name
 	public String module;
+	// Module functions
 	public HashMap<String,Function> functions;
+	// Current function being analysed
 	public Function currFunction;
+	// Module global declarations (key = variable name, value = variable object)
 	public LinkedHashMap<String,Declaration> globalDeclarations;
+	// Semantic analysis errors
 	public ArrayList<String> errors;
+	// Semantic analysis warnings
 	public ArrayList<String> warnings;
 
+	/**
+		* Inits a symbol table instance
+		*/
 	public SymbolTable(){
 		this.functions = new HashMap<String,Function>();
 		this.globalDeclarations = new LinkedHashMap<String,Declaration>();
@@ -21,10 +33,20 @@ public class SymbolTable{
 		this.warnings = new ArrayList<String>();
 	}
 
+	/**
+		* Tests if given string represents an integer value
+		* @param i value to be tested
+		* @return true if integer, false otherwise
+		*/
 	public static boolean isInt(String i){
 		return i.matches("^\\d+");
 	}
 
+	/**
+		* Recursively looks up a variable in the symbol table
+		* @param name variable name
+		* @return variable object (null if not found)
+		*/
 	private Declaration lookupVariable(String name){
 		Declaration var = null;
 
@@ -52,6 +74,11 @@ public class SymbolTable{
 		return var;
 	}
 
+	/**
+		* Recursively looks up a variable for an assign
+		* @param name variable name
+		* @return variable object (null if not found)
+		*/
 	private Declaration lookupVariableAssign(String name){
 		Declaration var = null;
 
@@ -78,6 +105,10 @@ public class SymbolTable{
 		return var;
 	}
 
+	/**
+		* Performs semantic analysis on an assign statement
+		* @param node node representing assign statement
+		*/
 	public void analyseAssign(SimpleNode node){
 		int line = node.getLine();
 		Declaration lhs = analyseAccessAssign((SimpleNode) node.jjtGetChild(0));
@@ -154,6 +185,11 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Performs semantic analysis on a call statement
+		* @param node node representing call statement
+		* @return function called's return value as a Declaration object
+		*/
 	public Declaration analyseCall(SimpleNode node){
 		int line = node.getLine();
 		String name = node.getValue();
@@ -237,6 +273,11 @@ public class SymbolTable{
 		return ret;
 	}
 
+	/**
+		* Performs semantic analysis on an term
+		* @param node node representing term
+		* @return term type as a string
+		*/
 	public String analyseTerm(SimpleNode node){
 		int line = node.getLine();
 
@@ -302,6 +343,11 @@ public class SymbolTable{
 		return "undefined";
 	}
 
+	/**
+		* Performs semantic analysis on an array size access
+		* @param node node representing array size access
+		* @return true if correct access, false otherwise
+		*/
 	public boolean analyseArraySize(SimpleNode node){
 		if(node.jjtGetNumChildren() > 0){
 			Declaration access = analyseAccess((SimpleNode) node.jjtGetChild(0));
@@ -315,6 +361,11 @@ public class SymbolTable{
 		return true;
 	}
 
+	/**
+		* Performs semantic analysis on an access in the LHS of an assign statement (might be an integer, array, ...)
+		* @param node node representing access
+		* @return accessed variable as a Declaration object
+		*/
 	public Declaration analyseAccessAssign(SimpleNode node){
 		int line = node.getLine();
 		String name = node.getValue();
@@ -377,6 +428,11 @@ public class SymbolTable{
 		return var;
 	}
 
+	/**
+		* Performs semantic analysis on an access statement
+		* @param node node representing access statement
+		* @return variable accessed as a Declaration object (null if not found)
+		*/
 	public Declaration analyseAccess(SimpleNode node){
 		int line = node.getLine();
 		String name = node.getValue();
@@ -456,6 +512,10 @@ public class SymbolTable{
 		return var;
 	}
 
+	/**
+		* Performs semantic analysis on a conditional test (used in if and while statements)
+		* @param node node representing conditional test
+		*/
 	public void analyseExprtest(SimpleNode node){
 		int line = node.getLine();
 		Declaration lhs = analyseAccess((SimpleNode) node.jjtGetChild(0));
@@ -495,6 +555,10 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Performs semantic analysis on an if statement
+		* @param node node representing if statement
+		*/
 	public void analyseIf(SimpleNode node){
 		currFunction.ifScopeDeclarations.add(new ArrayList<Declaration>());
 		int children = node.jjtGetNumChildren();
@@ -566,6 +630,10 @@ public class SymbolTable{
 		currFunction.ifScopeDeclarations.remove(currFunction.ifScopeDeclarations.size()-1);
 	}
 
+	/**
+		* Performs semantic analysis on a generic statement list (calls respective analysis function for each statement)
+		* @param node node representing statement list
+		*/
 	public void analyseStmtlst(SimpleNode node){
 		SimpleNode child;
 		for(int i = 0; i < node.jjtGetNumChildren();i++){
@@ -594,6 +662,10 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Performs semantic analysis on a function body
+		* @param node node representing function body
+		*/
 	public void analyseFunctionBody(SimpleNode node){
 		String functionName = node.getValue();
 		int children = node.jjtGetNumChildren();
@@ -625,6 +697,10 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Performs semantic analysis on a function
+		* @param node node representing function
+		*/
 	public void analyseFunction(SimpleNode node){
 		int line = node.getLine();
 		String functionName = node.getValue();
@@ -694,6 +770,10 @@ public class SymbolTable{
 		functions.put(functionName, function);
 	}
 
+	/**
+		* Performs semantic analysis on a declaration
+		* @param node node representing declaration statement
+		*/
 	public void analyseDeclaration(SimpleNode node){
 		int line = node.getLine();
 
@@ -791,6 +871,10 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Declares the global module attributes (global declarations and function prototypes)
+		* @param node node representing module
+		*/
 	private void declareGlobals(SimpleNode root){
 		SimpleNode node;
 		for(int i=0; i< root.jjtGetNumChildren(); i++)
@@ -819,6 +903,10 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Performs semantic analysis on module's functions' bodies
+		* @param node node representing module
+		*/
 	private void analyseFunctions(SimpleNode root){
 		SimpleNode node;
 		for(int i=0; i< root.jjtGetNumChildren(); i++)
@@ -833,6 +921,10 @@ public class SymbolTable{
 		}
 	}
 
+	/**
+		* Performs semantic analysis on module
+		* @param node node representing root
+		*/
 	public void analyse(SimpleNode root){
 
 		if(root.getId() == YalTreeConstants.JJTMODULE){
@@ -843,6 +935,9 @@ public class SymbolTable{
 		analyseFunctions(root);
 	}
 
+	/**
+		* Prints the symbol table as a string
+		*/
 	public void print(){
 		String newLine = System.lineSeparator();
 		String doubleNewLine = newLine+newLine;
@@ -866,6 +961,10 @@ public class SymbolTable{
 		System.out.println(content);
 	}
 
+	/**
+		* Logs all errors found during semantic analysis
+		* @return number of errors found
+		*/
 	public int printErrors(){
 		String newLine = System.lineSeparator();
 		for(String error : errors)
@@ -874,29 +973,46 @@ public class SymbolTable{
 		return errors.size();
 	}
 
+	/**
+		* Logs all warnings found during semantic analysis
+		*/
 	public void printWarnings(){
 		String newLine = System.lineSeparator();
 		for(String warning : warnings)
 			System.out.println(warning+newLine);
 	}
 
+	/**
+		* Adds a warning to the warning list
+		* @param msg warning to be added
+		*/
 	private void logWarning(String msg){
-		//System.out.println("Warning: "+msg);
 		warnings.add("Warning: "+msg);
 	}
 
+	/**
+		* Adds a warning with line specification to the warning list
+		* @param msg warning to be added
+		* @param line warning code line
+		*/
 	private void logWarning(int line, String msg){
-		//System.out.println("Warning on line " +line+": "+msg);
 		warnings.add("Warning on line " +line+": "+msg);
 	}
 
+	/**
+		* Adds an error to the error list
+		* @param msg error to be added
+		*/
 	private void logError(String msg){
-		//System.out.println("Error: "+msg);
 		errors.add("Error: "+msg);
 	}
 
+	/**
+		* Adds an error with line specification to the error list
+		* @param msg error to be added
+		* @param line error code line
+		*/
 	private void logError(int line, String msg){
-		//System.out.println("Error on line " +line+": "+msg);
 		errors.add("Error on line " +line+": "+msg);
 	}
 }
