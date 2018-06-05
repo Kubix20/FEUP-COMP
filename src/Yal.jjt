@@ -19,7 +19,6 @@ import generator.CodeGenerator;
 
 public class Yal {
   public static int nErrors = 0;
-  public static final int ERROR_LIMIT = 5;
 
   public static void printUsage() {
     System.out.println("Usage: java Yal <file path>");
@@ -127,10 +126,8 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   ++Yal.nErrors;
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
   Token t;
-  //MUST be do while
   do {
     t = getNextToken();
-	//System.out.println(t);
   } while (t.kind != kind);
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
@@ -141,10 +138,8 @@ void error_skipto_lookahead(ParseException e, int kind, String whereWasCaught) {
   ++Yal.nErrors;
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
   Token t = e.currentToken;
-  //MUST be do while
   while(getToken(1).kind != kind){
     t = getNextToken();
-	//System.out.println(t);
   }
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
@@ -163,10 +158,8 @@ void error_multskipto(ParseException e, int[] kinds, String whereWasCaught) {
   ++Yal.nErrors;
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
   Token t;
-  //MUST be do while
   do {
     t = getNextToken();
-	//System.out.println(t);
   } while (!contains(kinds,t.kind));
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
