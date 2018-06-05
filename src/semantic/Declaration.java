@@ -23,7 +23,7 @@ public class Declaration {
 	// The variable's value, in case it is integer
 	public int value;
 	// The array's size (in case variable is array)
-	public int size = 0;
+	public int size = -1;
 	public int local = -1;
 
 	/**
