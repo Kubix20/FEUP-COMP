@@ -1,0 +1,31 @@
+module funcandarith {
+  x = 3;
+	function f() {
+    x = x - 1;
+    if(x > 0) {
+		a = x;
+		b = -10;
+		c = a+b;
+		d = c*b;
+		e = d/a;
+		f = e >> 1;
+		g = f << 3;
+
+    io.println(a);
+		io.println(b);
+		io.println(c);
+		io.println(d);
+		io.println(e);
+		io.println(f);
+		io.println(g);
+    io.println("Back to main");
+    main();
+    }
+	}
+
+	function main() {
+    io.println("Back to f");
+		f();
+    io.println("Over");
+	}
+}
