@@ -1,9 +1,10 @@
 PROJECT TITLE: Compiler of the yal 0.4 language to Java Bytecodes
 
 GROUP: 42
-NAME1: Bruno Manuel Nascimento Costa Galvinas Piedade, NR1: 201505668, GRADE1: 17, CONTRIBUTION1: 33 1/3 %
-NAME2: Diogo Luis Rey Torres, NR2: 201506428, GRADE2: 17, CONTRIBUTION2: 33 1/3 %
+NAME1: Bruno Manuel Nascimento Costa Galvinas Piedade, NR1: 201505668, GRADE1: 17, CONTRIBUTION1: 33 1/3%
+NAME2: Diogo Luis Rey Torres, NR2: 201506428, GRADE2: 17, CONTRIBUTION2: 33 1/3%
 NAME3: João Paulo Madureira Damas, NR3: 201504088, GRADE3: 17, CONTRIBUTION3: 33 1/3%
+NAME4: Nelson André Garrido da Costa, NR4: 201403128, GRADE4: 0, CONTRIBUTION4: 0%
 
 GLOBAL Grade of the project: 17
 
@@ -132,9 +133,9 @@ To make the process more efficient we create scripts that compile and run all th
 The main problem with these scripts is after running we need to compare manually the .j files provided with our tests. We tried to put in the scripts the compilation via jasmin and the execution of the final class file but during developing that procedure became an issue to debug so only the compilation procedure stayed on the scripts.
 
 TASK DISTRIBUTION:
-Bruno Piedade -
-Diogo Torres -
-João Damas -
+Bruno Piedade - Semantic analysis/Symbol Table: (Arithmetic) expressions, control structures (if/else), local variables; Code Generation - Control structures (if/else, while), small optimizations (constant loading, iinc, use of i/a<op>_n instead of i/a<op> n when possible, etc)
+Diogo Torres - Syntactic Analysis (Grammar changes, Error recovery); Semantic analysis/Symbol Table: Functions (definition and calls); Code generation - Functions (prototypes, limits, calls)
+João Damas - Syntactic Analysis (Grammar changes, Error recovery); Semantic analysis/Symbol Table: Loops, (Global) declarations, assignments, arrays; Code generation - arrays, (arithmetic) expressions, small optimizations (constant loading, iinc, use of i/a<op>_n instead of i/a<op> n when possible, etc)
 
 PROS: Performs very thorough syntactic and semantic analysis, ensuring that a program that passes the tool is, indeed, valid.
 In each function, the best value for .limit locals and .limit stack is used, so as to not use more space than needed (not including register optimization).
