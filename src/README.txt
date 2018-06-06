@@ -127,7 +127,9 @@ OVERVIEW: The tool keeps it simple in terms of algorithms used. Initially, in or
 For the semantic analysis/symbol table construction, a simple passage through the AST was the option chosen. For code generation, another passage through the AST, now with the help of the Symbol Table, is the way the code generator works. Whenever possible (and by default), the generator tries to minimize the instruction cost by selecting optimal instructions (e.g. for doing x=x+1 and x being local var 0, generator generates iinc 0 1).
 Other than Java collections, no external packages were used.
 
-TESTSUITE AND TEST INFRASTRUCTURE: (Describe the content of your testsuite regarding the number of examples, the approach to automate the test, etc.)
+TESTSUITE AND TEST INFRASTRUCTURE: To test our application we use the examples given by teachers however we also create our test programs due to some specificity of our project. The number of examples in total are 47: 14 about errors, 28 about programs and 5 programs created by us. Some corrections were made in some files, which after discussion with the teachers, they confirmed that we were doing the correct approach.
+To make the process more efficient we create scripts that compile and run all the tests. In folder “testsuit” exists two scripts: “allerrors.sh” and “allprograms.sh” that compile the project and run all the tests specified by that script. In the other folder “examples” contains our programs with another tests that cover more specific cases.
+The main problem with these scripts is after running we need to compare manually the .j files provided with our tests. We try to put on scripts the compilation via jasmin and the execution of the product but in developing stage that procedure became an issue so only the compilation procedure stays on scripts.
 
 TASK DISTRIBUTION:
 Bruno Piedade -
