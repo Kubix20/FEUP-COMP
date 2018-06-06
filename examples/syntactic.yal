@@ -1,0 +1,47 @@
+module syntatic
+{
+
+	a;
+	b = [10];
+	c[] = [-5]; //error
+	
+	function sum = sum_array(A[],4) //error
+    {
+		i=0;
+		while(i < A.size) { // error
+			sum=sum+A[i];
+			i += 1; //error
+		}
+		
+		i++;  //error
+		res = i < 10; //error
+		res = 1+2+i;  //error
+		
+		msg = "adfdasgs"; //error
+    }
+
+	function c=f(a, b) {
+	
+		if(a << 10){		//error
+			b = b != 10+a;  //error
+		}
+		
+		if(a == b) {
+			 c = 2;
+		} else c=3; // error
+	}
+
+	function main1()
+	{
+		 c=f(2,12);
+
+		 c=f(4;2);  //error
+		 
+		 c=f(4+3,5);  //error
+		 
+		 c=3.5; //error
+	}
+	
+	d = 4;  //error
+
+}
