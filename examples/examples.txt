@@ -1,6 +1,5 @@
 syntactic.yal - Usage: java -jar yal2jvm.jar syntactic.yal - Goal: Show the error recovery mechanism for syntactic errors
 semantic.yal - Usage: java -jar yal2jvm.jar semantic.yal - Goal: Show the thoroughness of semantic analysis
-arrays.yal - Usage: java -jar yal2jvm.jar arrays.yal - Goal: Show the correct array treatment (initialization, accesses, normal assigns, assigns through a single value)
 function_and_arith.yal - Usage: java -jar yal2jvm.jar function_and_arith.yal - Goal: Show function definition (stack, locals, body code), function calling and arithmetic expressions
-ifs.yal - Usage: java -jar yal2jvm.jar ifs.yal - Goal: Show the correct management of conditional structures (template, label generation) even if various levels of nesting in them
+ifs_and_arrays.yal - Usage: java -jar yal2jvm.jar ifs.yal - Goal: For arrays, show the correct array treatment (initialization, accesses, normal assigns, assigns through a single value showcased to both local and global arrays). In regards to ifs, show the correct management of conditional structures (template, label generation) even if various levels of nesting are present
 loops.yal - Usage: java -jar yal2jvm.jar loops.yal - Goal: Show the correct management of loops (template generated, label generation)
