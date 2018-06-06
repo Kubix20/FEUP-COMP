@@ -1,0 +1,23 @@
+module loops {
+  x = 3;
+  y = 2;
+	function f() {
+    while(x > 0) {
+      io.println("I am x: ",x);
+      io.print("What are you: ");
+      z = io.read();
+      if(z > x) {
+        x = x - 1;
+      }
+    }
+    x = 3;
+	}
+
+	function main() {
+    while(y > 0) {
+      f();
+      y = y - 1;
+      io.println("y is ",y);
+    }
+	}
+}

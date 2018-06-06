@@ -8,20 +8,22 @@ options {
 }
 
 PARSER_BEGIN(Yal)
+package tree;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
+import semantic.*;
+import generator.CodeGenerator;
 
 public class Yal {
   public static int nErrors = 0;
-  public static final int ERROR_LIMIT = 5;
 
   public static void printUsage() {
-    System.out.println("Usage: java Yal <file path> [TODO: Possible optimizing options]");
+    System.out.println("Usage: java -jar yal2jvm.jar <file path:string> [OPTIONAL debug:1 for true, anything else false]");
   }
   public static void main(String args[]) throws ParseException, FileNotFoundException {
 
-	if(args.length != 1){
+	if(args.length < 1){
 		System.out.println("Wrong amount of arguments");
     Yal.printUsage();
 		return;
@@ -33,6 +35,12 @@ public class Yal {
     Yal.printUsage();
 		return;
 	}
+
+  boolean debug;
+  if(args.length > 1 && Integer.parseInt(args[1]) == 1)
+    debug = true;
+  else
+    debug = false;
 
 	String newline = System.lineSeparator();
 	System.out.println(newline+newline+
@@ -47,7 +55,7 @@ public class Yal {
 		return;
 	}
 
-	SymbolTable st = new SymbolTable();
+	SymbolTable st = new SymbolTable(debug);
 	st.analyse(root); //Semantic analysis
 	st.print();
 	errors = st.printErrors();
@@ -57,7 +65,7 @@ public class Yal {
 	}
 	st.printWarnings();
 
-	CodeGenerator cg = new CodeGenerator(inputFile,root,st);
+	CodeGenerator cg = new CodeGenerator(inputFile,root,st,debug);
 	try{
 		cg.generate();
 	}
@@ -122,10 +130,8 @@ void error_skipto(ParseException e, int kind, String whereWasCaught) {
   ++Yal.nErrors;
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
   Token t;
-  //MUST be do while
   do {
     t = getNextToken();
-	//System.out.println(t);
   } while (t.kind != kind);
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
@@ -136,10 +142,8 @@ void error_skipto_lookahead(ParseException e, int kind, String whereWasCaught) {
   ++Yal.nErrors;
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
   Token t = e.currentToken;
-  //MUST be do while
   while(getToken(1).kind != kind){
     t = getNextToken();
-	//System.out.println(t);
   }
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
@@ -158,10 +162,8 @@ void error_multskipto(ParseException e, int[] kinds, String whereWasCaught) {
   ++Yal.nErrors;
   System.out.println("EXCEPTION CAUGHT IN "+whereWasCaught+": "+e.toString());  // print the error message
   Token t;
-  //MUST be do while
   do {
     t = getNextToken();
-	//System.out.println(t);
   } while (!contains(kinds,t.kind));
   System.out.println("Proceeding with "+t.image+" of kind "+t.kind);
 }
