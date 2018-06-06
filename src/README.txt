@@ -55,19 +55,19 @@ Functions:
 		}
 
 		function f2(){}
-		
+
 		function f2(){} <- error, already declared
-		
+
 		function ret = f3(){} <- error, uninitialized return
-		
-	
+
+
 Function Bodies - Variables, cycles, conditions and arithmetic expressions
-	
-	
+
+
 	A variable can be initialized as an array or as an integer and must be assigned when it is declared. Its type will be defined to one compatible with the right hand side operator.
 	To initialize an array, the value must be an integer whether it is a function call, integer variable, size or index access of an array.
 	Arrays can be assigned to a value (i.e. array[] = 2) which assigns the value to all of its elements.
-	
+
 	Ex:
 
 		a = 1+1; <- defines a as an integer
@@ -78,11 +78,11 @@ Function Bodies - Variables, cycles, conditions and arithmetic expressions
 		b[0] = 2;
 		b.size = 5; <- error
 		...
-	
-	
+
+
 	Variables used in arithmetic expressions and comparisons must be numeric (constants, function calls, integer variables, size or index accesses of arrays).
-	
-	Ex: 
+
+	Ex:
 
 		a = 1;
 		b = 2
@@ -94,8 +94,8 @@ Function Bodies - Variables, cycles, conditions and arithmetic expressions
 		d = a+b; <- ok
 		d = b+c; <- error
 		d = b+f(); <- ok, if f returns an integer
-			
-			
+
+
 	In nested if statements all declarations must be compatible to be visible on upper scopes (i.e. in an if/else statement a new variable must be initialized as the same type in both branches) otherwise their usage must be restrained to the statement in question.
 
 	Ex:
@@ -127,9 +127,9 @@ OVERVIEW: The tool keeps it simple in terms of algorithms used. Initially, in or
 For the semantic analysis/symbol table construction, a simple passage through the AST was the option chosen. For code generation, another passage through the AST, now with the help of the Symbol Table, is the way the code generator works. Whenever possible (and by default), the generator tries to minimize the instruction cost by selecting optimal instructions (e.g. for doing x=x+1 and x being local var 0, generator generates iinc 0 1).
 Other than Java collections, no external packages were used.
 
-TESTSUITE AND TEST INFRASTRUCTURE: To test our application we use the examples given by teachers however we also create our test programs due to some specificity of our project. The number of examples in total are 47: 14 about errors, 28 about programs and 5 programs created by us. Some corrections were made in some files, which after discussion with the teachers, they confirmed that we were doing the correct approach.
-To make the process more efficient we create scripts that compile and run all the tests. In folder “testsuit” exists two scripts: “allerrors.sh” and “allprograms.sh” that compile the project and run all the tests specified by that script. In the other folder “examples” contains our programs with another tests that cover more specific cases.
-The main problem with these scripts is after running we need to compare manually the .j files provided with our tests. We try to put on scripts the compilation via jasmin and the execution of the product but in developing stage that procedure became an issue so only the compilation procedure stays on scripts.
+TESTSUITE AND TEST INFRASTRUCTURE: To test our application we use the examples given, however we also created our own test programs due to some specificity in some parts of our project. The number of examples in total are 47: 14 about errors, 28 about programs and 5 programs created by us. Some corrections were made in some files, which after discussion with the teachers, they confirmed that we were doing the correct approach.
+To make the process more efficient we create scripts that compile and run all the tests. In the folder “testsuit” there are two scripts: “allerrors.sh” and “allprograms.sh” that compile the project and run all the tests specified by that script. In the folder “examples” there are some programs with another tests that cover more specific cases.
+The main problem with these scripts is after running we need to compare manually the .j files provided with our tests. We tried to put in the scripts the compilation via jasmin and the execution of the final class file but during developing that procedure became an issue to debug so only the compilation procedure stayed on the scripts.
 
 TASK DISTRIBUTION:
 Bruno Piedade -
@@ -138,6 +138,6 @@ João Damas -
 
 PROS: Performs very thorough syntactic and semantic analysis, ensuring that a program that passes the tool is, indeed, valid.
 In each function, the best value for .limit locals and .limit stack is used, so as to not use more space than needed (not including register optimization).
-Also, it covers a great deal of specific details, such as initializing any type of array (local or global) through a single value, multiple nested scopes, ... //TODO: Complete
+Also, it covers a great deal of specific details, such as initializing any type of array (local or global) through a single value and multiple nested scopes (with tight variable scope and type analysis)
 
-CONS: Although it optimizes loop generation (the best template is used) and tries to generate the best code for each scenario (e.g. constants are always loaded the most efficient way possible, iinc is always used whenever possible to increment local variables), it does not perform register optimization nor constant propagation.
+CONS: Although it optimizes loop generation (the best template is used) and tries to generate the best code for each scenario (e.g. constants are always loaded the most efficient way possible, iinc is used to increment local variables), it does not perform register optimization nor constant propagation.
